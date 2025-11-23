@@ -73,31 +73,56 @@ ipcMain.on('logout', () => {
     mainWindow.loadFile(path.join(__dirname, 'login.html'));
 });
 
+/**
+ * Print slip handler with proper preview support
+ * Opens slip in a hidden window, loads it, then triggers print dialog
+ * The print dialog allows user to preview before printing or save as PDF
+ */
 ipcMain.on('print-slip', (event, slipId) => {
     const printWindow = new BrowserWindow({
         width: 800,
         height: 1100,
-        show: false,
+        show: false,  // Hidden until loaded
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false
+            nodeIntegration: false,
+            contextIsolation: true,
+            enableRemoteModule: false
         }
     });
 
     printWindow.loadURL(`http://localhost:5000/print/${slipId}`);
 
     printWindow.webContents.on('did-finish-load', () => {
+        // Wait for content to render, then show print dialog
         setTimeout(() => {
+            // Show the window briefly for better UX (optional)
+            // printWindow.show();
+
+            // Open print dialog with preview enabled
             printWindow.webContents.print({
-                silent: false,
-                printBackground: true,
-                deviceName: ''
+                silent: false,  // Show print dialog
+                printBackground: true,  // Print background colors and images
+                color: true,  // Color printing
+                margin: {
+                    marginType: 'printableArea'
+                },
+                landscape: false,
+                pagesPerSheet: 1,
+                collate: false,
+                copies: 1
             }, (success, errorType) => {
-                if (!success) {
+                if (!success && errorType) {
                     console.error('Print failed:', errorType);
                 }
+                // Close print window after print dialog is closed
                 printWindow.close();
             });
-        }, 1000);
+        }, 1500);  // Increased timeout to ensure full render
+    });
+
+    // Handle print window errors
+    printWindow.webContents.on('did-fail-load', () => {
+        console.error('Failed to load print content');
+        printWindow.close();
     });
 });

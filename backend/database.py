@@ -10,26 +10,31 @@ DB_CONFIG = {
     'database': 'purchase_slips_db'
 }
 
+# Global connection pool - initialized once at startup
 connection_pool = None
 
 def init_connection_pool():
-    """Initialize MySQL connection pool"""
+    """
+    Initialize MySQL connection pool with improved settings
+    Pool size increased to 10 for desktop app usage
+    pool_reset_session ensures clean connections from pool
+    """
     global connection_pool
     try:
         connection_pool = mysql.connector.pooling.MySQLConnectionPool(
             pool_name="purchase_pool",
-            pool_size=5,
-            pool_reset_session=True,
+            pool_size=10,  # Increased from 5 to 10 for better concurrency
+            pool_reset_session=True,  # Reset session variables when returning to pool
             **DB_CONFIG
         )
-        print("✓ MySQL connection pool created successfully")
+        print("✓ MySQL connection pool created successfully (size: 10)")
     except mysql.connector.Error as err:
         if err.errno == 1049:
             print("Database doesn't exist. Creating database...")
             create_database()
             connection_pool = mysql.connector.pooling.MySQLConnectionPool(
                 pool_name="purchase_pool",
-                pool_size=5,
+                pool_size=10,
                 pool_reset_session=True,
                 **DB_CONFIG
             )
@@ -39,6 +44,8 @@ def init_connection_pool():
 
 def create_database():
     """Create the database if it doesn't exist"""
+    conn = None
+    cursor = None
     try:
         temp_config = DB_CONFIG.copy()
         database_name = temp_config.pop('database')
@@ -46,21 +53,30 @@ def create_database():
         conn = mysql.connector.connect(**temp_config)
         cursor = conn.cursor()
         cursor.execute(f"CREATE DATABASE IF NOT EXISTS {database_name}")
-        cursor.close()
-        conn.close()
         print(f"✓ Database '{database_name}' created successfully")
     except mysql.connector.Error as err:
         print(f"Error creating database: {err}")
         raise
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 def init_db():
-    """Initialize the database and create tables if they don't exist"""
+    """
+    Initialize the database and create tables if they don't exist
+    Uses proper connection management with try/finally blocks
+    """
+    conn = None
+    cursor = None
     try:
         init_connection_pool()
 
         conn = get_db_connection()
         cursor = conn.cursor()
 
+        # Create purchase_slips table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS purchase_slips (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -80,16 +96,20 @@ def init_db():
                 bags DOUBLE DEFAULT 0,
                 avg_bag_weight DOUBLE DEFAULT 0,
                 net_weight DOUBLE DEFAULT 0,
+                shortage_kg DOUBLE DEFAULT 0,
                 rate DOUBLE DEFAULT 0,
+                rate_basis VARCHAR(10) DEFAULT '100',
+                calculated_rate DOUBLE DEFAULT 0,
                 amount DOUBLE DEFAULT 0,
                 bank_commission DOUBLE DEFAULT 0,
-                batav_percent DOUBLE DEFAULT 1,
+                postage DOUBLE DEFAULT 0,
+                batav_percent DOUBLE DEFAULT 0,
                 batav DOUBLE DEFAULT 0,
-                shortage_percent DOUBLE DEFAULT 1,
+                shortage_percent DOUBLE DEFAULT 0,
                 shortage DOUBLE DEFAULT 0,
-                dalali_rate DOUBLE DEFAULT 10,
+                dalali_rate DOUBLE DEFAULT 0,
                 dalali DOUBLE DEFAULT 0,
-                hammali_rate DOUBLE DEFAULT 10,
+                hammali_rate DOUBLE DEFAULT 0,
                 hammali DOUBLE DEFAULT 0,
                 freight DOUBLE DEFAULT 0,
                 rate_diff DOUBLE DEFAULT 0,
@@ -118,10 +138,29 @@ def init_db():
             )
         ''')
 
+        # Create users table if it doesn't exist
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                full_name VARCHAR(255),
+                role VARCHAR(50) DEFAULT 'user',
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_login TIMESTAMP NULL
+            )
+        ''')
+
+        # Check and add missing columns
         cursor.execute("SHOW COLUMNS FROM purchase_slips")
         existing_columns = {row[0] for row in cursor.fetchall()}
 
         columns_to_add = {
+            'shortage_kg': "DOUBLE DEFAULT 0",
+            'rate_basis': "VARCHAR(10) DEFAULT '100'",
+            'calculated_rate': "DOUBLE DEFAULT 0",
+            'postage': "DOUBLE DEFAULT 0",
             'payment_due_date': "VARCHAR(50)",
             'payment_due_comment': "TEXT",
             'payment_bank_account': "TEXT",
@@ -143,35 +182,74 @@ def init_db():
                     cursor.execute(f"ALTER TABLE purchase_slips ADD COLUMN {col_name} {col_type}")
                     print(f"✓ Added column: {col_name}")
                 except mysql.connector.Error as err:
-                    if err.errno != 1060:
+                    if err.errno != 1060:  # Ignore "duplicate column" error
                         raise
-                    print(f"- Column {col_name} already exists")
+
+        # Create default admin user if no users exist
+        cursor.execute("SELECT COUNT(*) FROM users")
+        user_count = cursor.fetchone()[0]
+
+        if user_count == 0:
+            cursor.execute('''
+                INSERT INTO users (username, password, full_name, role)
+                VALUES ('admin', 'admin', 'Administrator', 'admin')
+            ''')
+            print("✓ Default admin user created (username: admin, password: admin)")
 
         conn.commit()
-        cursor.close()
-        conn.close()
         print("✓ Database tables initialized successfully")
 
     except mysql.connector.Error as err:
         print(f"Error initializing database: {err}")
         raise
+    finally:
+        # Always close cursor and connection to return to pool
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 def get_db_connection():
-    """Get a database connection from the pool"""
+    """
+    Get a database connection from the pool
+    Includes ping logic to handle stale connections
+    """
     global connection_pool
     if connection_pool is None:
         init_connection_pool()
-    return connection_pool.get_connection()
+
+    try:
+        conn = connection_pool.get_connection()
+        # Ping the connection to ensure it's alive and reconnect if needed
+        conn.ping(reconnect=True, attempts=3, delay=2)
+        return conn
+    except Exception as e:
+        print(f"Error getting connection from pool: {e}")
+        raise
 
 def get_next_bill_no():
-    """Get the next bill number"""
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute('SELECT MAX(bill_no) as max_bill FROM purchase_slips')
-    result = cursor.fetchone()
-    cursor.close()
-    conn.close()
+    """
+    Get the next bill number
+    Uses proper connection management with try/finally
+    """
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('SELECT MAX(bill_no) as max_bill FROM purchase_slips')
+        result = cursor.fetchone()
 
-    if result['max_bill'] is None:
-        return 1
-    return result['max_bill'] + 1
+        if result['max_bill'] is None:
+            return 1
+        return result['max_bill'] + 1
+
+    except mysql.connector.Error as err:
+        print(f"Error getting next bill number: {err}")
+        raise
+    finally:
+        # Critical: Always close cursor and connection to return to pool
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()

@@ -489,10 +489,16 @@
         </div>
     </div>
 
+    <!--
+        Print handling:
+        - For Electron: Main process triggers print dialog via webContents.print()
+        - For browser: Auto-print on load (uncomment below for browser usage)
+    -->
     <script>
-        window.onload = function() {
-            window.print();
-        };
+        // Uncomment for browser-based printing (not needed for Electron)
+        // window.onload = function() {
+        //     window.print();
+        // };
     </script>
 </body>
 </html>

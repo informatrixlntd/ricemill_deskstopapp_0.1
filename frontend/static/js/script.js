@@ -72,9 +72,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const moistureDedVal = parseFloat(moistureDed.value) || 0;
         const tdsVal = parseFloat(tds.value) || 0;
 
-        const batavPercentVal = parseFloat(batavPercent.value) || 1;
-        const dalaliRateVal = parseFloat(dalaliRate.value) || 10;
-        const hammaliRateVal = parseFloat(hammaliRate.value) || 10;
+        const batavPercentVal = parseFloat(batavPercent.value) || 0;
+        const dalaliRateVal = parseFloat(dalaliRate.value) || 0;
+        const hammaliRateVal = parseFloat(hammaliRate.value) || 0;
 
         const calculatedRateVal = parseFloat(calculatedRate.value) || 0;
 
@@ -85,10 +85,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const amountVal = Math.round(adjustedNetWeight * calculatedRateVal * 100) / 100;
 
-        const batavVal = Math.round(amountVal * (batavPercentVal / 100) * 100) / 100;
+        const batavVal = batavPercentVal > 0 ? Math.round(amountVal * (batavPercentVal / 100) * 100) / 100 : 0;
 
-        const dalaliVal = Math.round(adjustedNetWeight * dalaliRateVal * 100) / 100;
-        const hammaliVal = Math.round(adjustedNetWeight * hammaliRateVal * 100) / 100;
+        const dalaliVal = dalaliRateVal > 0 ? Math.round(adjustedNetWeight * dalaliRateVal * 100) / 100 : 0;
+        const hammaliVal = hammaliRateVal > 0 ? Math.round(adjustedNetWeight * hammaliRateVal * 100) / 100 : 0;
 
         const categoryADeductions = bankCommissionVal + postageVal + freightVal + rateDiffVal + qualityDiffVal + moistureDedVal + tdsVal;
         const totalDeductionVal = Math.round((categoryADeductions + batavVal + dalaliVal + hammaliVal) * 100) / 100;

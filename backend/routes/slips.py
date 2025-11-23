@@ -25,10 +25,10 @@ def calculate_fields(data):
     avg_bag_weight = safe_float(data.get('avg_bag_weight', 0), 0)
     rate = safe_float(data.get('rate', 0), 0)
     bank_commission = safe_float(data.get('bank_commission', 0), 0)
-    batav_percent = safe_float(data.get('batav_percent', 1), 1)
-    shortage_percent = safe_float(data.get('shortage_percent', 1), 1)
-    dalali_rate = safe_float(data.get('dalali_rate', 10), 10)
-    hammali_rate = safe_float(data.get('hammali_rate', 10), 10)
+    batav_percent = safe_float(data.get('batav_percent', 0), 0)
+    shortage_percent = safe_float(data.get('shortage_percent', 0), 0)
+    dalali_rate = safe_float(data.get('dalali_rate', 0), 0)
+    hammali_rate = safe_float(data.get('hammali_rate', 0), 0)
     freight = safe_float(data.get('freight', 0), 0)
     rate_diff = safe_float(data.get('rate_diff', 0), 0)
     quality_diff = safe_float(data.get('quality_diff', 0), 0)
@@ -37,10 +37,10 @@ def calculate_fields(data):
 
     net_weight = round(bags * avg_bag_weight, 2)
     amount = round(net_weight * rate, 2)
-    batav = round(amount * (batav_percent / 100), 2)
-    shortage = round(amount * (shortage_percent / 100), 2)
-    dalali = round(net_weight * dalali_rate, 2)
-    hammali = round(net_weight * hammali_rate, 2)
+    batav = round(amount * (batav_percent / 100), 2) if batav_percent > 0 else 0
+    shortage = round(amount * (shortage_percent / 100), 2) if shortage_percent > 0 else 0
+    dalali = round(net_weight * dalali_rate, 2) if dalali_rate > 0 else 0
+    hammali = round(net_weight * hammali_rate, 2) if hammali_rate > 0 else 0
     total_deduction = round(bank_commission + batav + shortage + dalali + hammali + freight + rate_diff + quality_diff + moisture_ded + tds, 2)
     payable_amount = round(amount - total_deduction, 2)
 
@@ -107,13 +107,13 @@ def add_slip():
             safe_float(data.get('rate', 0), 0),
             safe_float(data.get('amount', 0), 0),
             safe_float(data.get('bank_commission', 0), 0),
-            safe_float(data.get('batav_percent', 1), 1),
+            safe_float(data.get('batav_percent', 0), 0),
             safe_float(data.get('batav', 0), 0),
-            safe_float(data.get('shortage_percent', 1), 1),
+            safe_float(data.get('shortage_percent', 0), 0),
             safe_float(data.get('shortage', 0), 0),
-            safe_float(data.get('dalali_rate', 10), 10),
+            safe_float(data.get('dalali_rate', 0), 0),
             safe_float(data.get('dalali', 0), 0),
-            safe_float(data.get('hammali_rate', 10), 10),
+            safe_float(data.get('hammali_rate', 0), 0),
             safe_float(data.get('hammali', 0), 0),
             safe_float(data.get('freight', 0), 0),
             safe_float(data.get('rate_diff', 0), 0),
@@ -277,13 +277,13 @@ def update_slip(slip_id):
             safe_float(merged_data.get('rate', 0), 0),
             safe_float(merged_data.get('amount', 0), 0),
             safe_float(merged_data.get('bank_commission', 0), 0),
-            safe_float(merged_data.get('batav_percent', 1), 1),
+            safe_float(merged_data.get('batav_percent', 0), 0),
             safe_float(merged_data.get('batav', 0), 0),
-            safe_float(merged_data.get('shortage_percent', 1), 1),
+            safe_float(merged_data.get('shortage_percent', 0), 0),
             safe_float(merged_data.get('shortage', 0), 0),
-            safe_float(merged_data.get('dalali_rate', 10), 10),
+            safe_float(merged_data.get('dalali_rate', 0), 0),
             safe_float(merged_data.get('dalali', 0), 0),
-            safe_float(merged_data.get('hammali_rate', 10), 10),
+            safe_float(merged_data.get('hammali_rate', 0), 0),
             safe_float(merged_data.get('hammali', 0), 0),
             safe_float(merged_data.get('freight', 0), 0),
             safe_float(merged_data.get('rate_diff', 0), 0),

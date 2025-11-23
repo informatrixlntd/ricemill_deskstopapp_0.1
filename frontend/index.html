@@ -11,7 +11,10 @@
     <nav class="navbar navbar-dark bg-primary">
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1">Rice Mill Purchase Slip Manager</span>
-            <a href="/reports" class="btn btn-light">View Reports</a>
+            <div>
+                <a href="/reports" class="btn btn-light me-2">View Reports</a>
+                <a href="/reports" class="btn btn-outline-light">View All Slips</a>
+            </div>
         </div>
     </nav>
 
@@ -183,7 +186,7 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Batav %</label>
-                                <input type="number" step="0.01" class="form-control calc-input" name="batav_percent" id="batav_percent" value="1">
+                                <input type="number" step="0.01" class="form-control calc-input" name="batav_percent" id="batav_percent" value="0">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Batav Amount (Auto)</label>
@@ -197,7 +200,7 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Dalali Rate (per kg)</label>
-                                <input type="number" step="0.01" class="form-control calc-input" name="dalali_rate" id="dalali_rate" value="10">
+                                <input type="number" step="0.01" class="form-control calc-input" name="dalali_rate" id="dalali_rate" value="0">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Dalali Amount (Auto)</label>
@@ -207,7 +210,7 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Hammali Rate (per kg)</label>
-                                <input type="number" step="0.01" class="form-control calc-input" name="hammali_rate" id="hammali_rate" value="10">
+                                <input type="number" step="0.01" class="form-control calc-input" name="hammali_rate" id="hammali_rate" value="0">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Hammali Amount (Auto)</label>

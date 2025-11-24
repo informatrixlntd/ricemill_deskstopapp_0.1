@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 import sys
 import os
 from datetime import datetime
+import mysql.connector
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -71,44 +72,98 @@ def login():
 
 @auth_bp.route('/api/users', methods=['GET'])
 def get_users():
-    """Get all users - proper connection management"""
+    """Get all users - enhanced error handling and connection management"""
     conn = None
     cursor = None
     try:
+        # Get connection with retry logic
         conn = get_db_connection()
+
+        # Test connection before use
+        conn.ping(reconnect=True)
+
         cursor = conn.cursor(dictionary=True)
 
+        # Execute query with explicit column selection
         cursor.execute('''
-            SELECT id, username, full_name, role, is_active, created_at, last_login
+            SELECT
+                id,
+                username,
+                COALESCE(full_name, '') as full_name,
+                role,
+                is_active,
+                created_at,
+                last_login
             FROM users
             ORDER BY created_at DESC
         ''')
 
         users = cursor.fetchall()
 
+        # Log for debugging
+        print(f"✓ Fetched {len(users)} users from database")
+
         # Format datetime objects for JSON serialization
         for user in users:
-            if user.get('created_at'):
-                user['created_at'] = user['created_at'].strftime('%Y-%m-%d %H:%M:%S')
-            if user.get('last_login'):
-                user['last_login'] = user['last_login'].strftime('%Y-%m-%d %H:%M:%S')
+            # Handle created_at
+            if user.get('created_at') and user['created_at'] is not None:
+                try:
+                    user['created_at'] = user['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+                except Exception as e:
+                    print(f"Warning: Could not format created_at: {e}")
+                    user['created_at'] = str(user['created_at'])
+
+            # Handle last_login
+            if user.get('last_login') and user['last_login'] is not None:
+                try:
+                    user['last_login'] = user['last_login'].strftime('%Y-%m-%d %H:%M:%S')
+                except Exception as e:
+                    print(f"Warning: Could not format last_login: {e}")
+                    user['last_login'] = str(user['last_login'])
+            else:
+                user['last_login'] = None
+
+            # Ensure boolean for is_active
+            user['is_active'] = bool(user.get('is_active', True))
 
         return jsonify({
             'success': True,
             'users': users
         }), 200
 
-    except Exception as e:
-        print(f"Error fetching users: {e}")
+    except mysql.connector.Error as db_error:
+        error_msg = f"Database error: {str(db_error)}"
+        print(f"❌ {error_msg}")
         return jsonify({
             'success': False,
-            'message': str(e)
+            'message': error_msg,
+            'error_type': 'database'
         }), 500
+
+    except Exception as e:
+        error_msg = f"Unexpected error: {str(e)}"
+        print(f"❌ {error_msg}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': error_msg,
+            'error_type': 'server'
+        }), 500
+
     finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+        # Always clean up resources
+        try:
+            if cursor:
+                cursor.close()
+        except Exception as e:
+            print(f"Warning: Error closing cursor: {e}")
+
+        try:
+            if conn:
+                conn.close()
+        except Exception as e:
+            print(f"Warning: Error closing connection: {e}")
 
 
 @auth_bp.route('/api/users', methods=['POST'])

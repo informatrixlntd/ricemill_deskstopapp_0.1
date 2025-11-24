@@ -891,39 +891,83 @@
         }
 
         async function loadAllUsers() {
-            try {
-                const response = await fetch('http://localhost:5000/api/users');
-                const result = await response.json();
+            const tbody = document.getElementById('usersTableBody');
 
-                const tbody = document.getElementById('usersTableBody');
+            try {
+                // Show loading state
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border spinner-border-sm me-2"></div>Loading users...</td></tr>';
+
+                const response = await fetch('http://localhost:5000/api/users');
+
+                // Check HTTP status
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log('Users API Response:', result);
+
+                // Clear loading state
                 tbody.innerHTML = '';
 
-                if (result.success && result.users.length > 0) {
-                    result.users.forEach(usr => {
-                        const showEditDelete = isAdmin;
-                        const row = `
-                            <tr>
-                                <td>${usr.username}</td>
-                                <td>${usr.full_name || '-'}</td>
-                                <td><span class="badge bg-${usr.role === 'admin' ? 'danger' : 'primary'}">${usr.role}</span></td>
-                                <td>${usr.last_login ? new Date(usr.last_login).toLocaleString() : 'Never'}</td>
-                                <td><span class="badge bg-${usr.is_active ? 'success' : 'secondary'}">${usr.is_active ? 'Active' : 'Inactive'}</span></td>
-                                <td>
-                                    ${showEditDelete ? `
-                                        <button class="btn btn-sm btn-warning" onclick="showEditUserModal(${usr.id})">Edit</button>
-                                        <button class="btn btn-sm btn-danger" onclick="deleteUser(${usr.id})" ${usr.username === 'admin' ? 'disabled' : ''}>Delete</button>
-                                    ` : '<span class="text-muted">No access</span>'}
-                                </td>
-                            </tr>
-                        `;
-                        tbody.innerHTML += row;
-                    });
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No users found</td></tr>';
+                // Check API response
+                if (!result.success) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-warning">⚠️ API Error: ${result.message || 'Unknown error'}</td></tr>`;
+                    console.error('API returned error:', result);
+                    return;
                 }
+
+                // Check if users array exists and has data
+                if (!result.users || !Array.isArray(result.users)) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-warning">⚠️ Invalid response format from server</td></tr>';
+                    console.error('Invalid users data:', result);
+                    return;
+                }
+
+                if (result.users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No users found in database.<br><small class="text-muted">Database might be empty or users table not initialized.</small></td></tr>';
+                    console.warn('Users array is empty');
+                    return;
+                }
+
+                // Display users
+                result.users.forEach(usr => {
+                    const showEditDelete = isAdmin;
+                    const row = `
+                        <tr>
+                            <td>${usr.username}</td>
+                            <td>${usr.full_name || '-'}</td>
+                            <td><span class="badge bg-${usr.role === 'admin' ? 'danger' : 'primary'}">${usr.role}</span></td>
+                            <td>${usr.last_login ? new Date(usr.last_login).toLocaleString() : 'Never'}</td>
+                            <td><span class="badge bg-${usr.is_active ? 'success' : 'secondary'}">${usr.is_active ? 'Active' : 'Inactive'}</span></td>
+                            <td>
+                                ${showEditDelete ? `
+                                    <button class="btn btn-sm btn-warning" onclick="showEditUserModal(${usr.id})">Edit</button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteUser(${usr.id})" ${usr.username === 'admin' ? 'disabled' : ''}>Delete</button>
+                                ` : '<span class="text-muted">No access</span>'}
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+
+                console.log(`✅ Loaded ${result.users.length} users successfully`);
+
             } catch (error) {
-                console.error('Error loading users:', error);
-                document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error loading users</td></tr>';
+                console.error('❌ Error loading users:', error);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-danger">
+                            <strong>❌ Connection Error</strong><br>
+                            ${error.message}<br>
+                            <small class="text-muted mt-2 d-block">
+                                • Make sure Flask server is running on port 5000<br>
+                                • Check backend/app.py is started<br>
+                                • Check browser console (F12) for details
+                            </small>
+                        </td>
+                    </tr>
+                `;
             }
         }
 

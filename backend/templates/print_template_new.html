@@ -390,6 +390,22 @@
             </div>
         </div>
 
+        <div class="section-title" style="background: #2e7d32; margin-top: 15px;">💰 PAYMENT SUMMARY</div>
+        <table style="border: 2px solid #2e7d32; background: #e8f5e9;">
+            <tr style="font-size: 10pt;">
+                <td style="font-weight: bold; width: 60%;">Payable Amount:</td>
+                <td class="text-right" style="font-weight: bold;">₹ {{ "%.2f"|format(slip.payable_amount or 0) }}</td>
+            </tr>
+            <tr style="font-size: 10pt;">
+                <td style="font-weight: bold;">Total Paid Amount:</td>
+                <td class="text-right" style="font-weight: bold;">₹ {{ "%.2f"|format(slip.total_paid_amount or 0) }}</td>
+            </tr>
+            <tr style="font-size: 11pt; background: #c8e6c9;">
+                <td style="font-weight: bold;">Balance Amount:</td>
+                <td class="text-right" style="font-weight: bold; color: #1b5e20;">₹ {{ "%.2f"|format(slip.balance_amount or 0) }}</td>
+            </tr>
+        </table>
+
         {% if slip.payment_due_date %}
         <div class="field-group">
             <div class="field-group-title">Payment Due Information</div>
@@ -424,46 +440,35 @@
         {% endif %}
         {% endif %}
 
-        {% if slip.instalment_1 or slip.instalment_2 or slip.instalment_3 or slip.instalment_4 or slip.instalment_5 %}
-        <div class="section-title">Payment Installments</div>
+        {% set has_instalments = slip.instalment_1_date or slip.instalment_1_amount or slip.instalment_1_comment or slip.instalment_2_date or slip.instalment_2_amount or slip.instalment_2_comment or slip.instalment_3_date or slip.instalment_3_amount or slip.instalment_3_comment or slip.instalment_4_date or slip.instalment_4_amount or slip.instalment_4_comment or slip.instalment_5_date or slip.instalment_5_amount or slip.instalment_5_comment %}
+        {% if has_instalments %}
+        <div class="section-title">Payment Instalments</div>
         <table class="installments-table">
             <thead>
                 <tr>
-                    <th>Sr</th>
-                    <th>Details</th>
+                    <th style="width: 8%;">Sr</th>
+                    <th style="width: 28%;">Date</th>
+                    <th style="width: 28%;">Amount</th>
+                    <th style="width: 36%;">Comment</th>
                 </tr>
             </thead>
             <tbody>
-                {% if slip.instalment_1 %}
+                {% for i in range(1, 6) %}
+                    {% set date_field = 'instalment_' ~ i ~ '_date' %}
+                    {% set amount_field = 'instalment_' ~ i ~ '_amount' %}
+                    {% set comment_field = 'instalment_' ~ i ~ '_comment' %}
+                    {% set date = slip[date_field] %}
+                    {% set amount = slip[amount_field] or 0 %}
+                    {% set comment = slip[comment_field] %}
+                    {% if date or amount > 0 or comment %}
                 <tr>
-                    <td class="text-center">1</td>
-                    <td>{{ slip.instalment_1 }}</td>
+                    <td class="text-center">{{ i }}</td>
+                    <td>{{ date if date else '-' }}</td>
+                    <td class="text-right">{{ ("₹ %.2f"|format(amount)) if amount > 0 else '-' }}</td>
+                    <td>{{ comment if comment else '-' }}</td>
                 </tr>
-                {% endif %}
-                {% if slip.instalment_2 %}
-                <tr>
-                    <td class="text-center">2</td>
-                    <td>{{ slip.instalment_2 }}</td>
-                </tr>
-                {% endif %}
-                {% if slip.instalment_3 %}
-                <tr>
-                    <td class="text-center">3</td>
-                    <td>{{ slip.instalment_3 }}</td>
-                </tr>
-                {% endif %}
-                {% if slip.instalment_4 %}
-                <tr>
-                    <td class="text-center">4</td>
-                    <td>{{ slip.instalment_4 }}</td>
-                </tr>
-                {% endif %}
-                {% if slip.instalment_5 %}
-                <tr>
-                    <td class="text-center">5</td>
-                    <td>{{ slip.instalment_5 }}</td>
-                </tr>
-                {% endif %}
+                    {% endif %}
+                {% endfor %}
             </tbody>
         </table>
         {% endif %}

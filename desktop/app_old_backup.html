@@ -77,7 +77,6 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             max-height: 70vh;
             overflow-y: auto;
-            overflow-x: hidden;
         }
         .view-section {
             margin-bottom: 25px;
@@ -94,54 +93,18 @@
             color: #667eea;
             font-weight: 600;
         }
-        .view-table {
-            width: 100%;
-            border-collapse: collapse;
+        .view-field {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
         }
-        .view-table td {
-            padding: 8px;
-            border: 1px solid #e0e0e0;
-        }
-        .view-table td:first-child {
+        .view-label {
             font-weight: 600;
-            background: #f8f9fa;
-            width: 200px;
+            color: #555;
         }
-        .payment-highlight {
-            background: #e8f5e9;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            border-left: 4px solid #4caf50;
-        }
-        .payment-highlight h6 {
-            margin: 0 0 10px 0;
-            color: #2e7d32;
-        }
-        .payment-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 5px 0;
-            font-size: 15px;
-        }
-        .payment-label {
-            font-weight: 600;
-        }
-        .payment-value {
-            font-weight: 700;
-            color: #2e7d32;
-        }
-        .instalment-card {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-        .instalment-card h6 {
-            margin: 0 0 8px 0;
-            color: #495057;
-            font-size: 14px;
+        .view-value {
+            color: #333;
         }
         .modal-footer button {
             min-width: 100px;
@@ -150,6 +113,24 @@
         .form-label {
             font-weight: 600;
             margin-bottom: 5px;
+        }
+        /* Print styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printArea, #printArea * {
+                visibility: visible;
+            }
+            #printArea {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .no-print {
+                display: none !important;
+            }
         }
     </style>
 </head>
@@ -189,13 +170,12 @@
                                     <th>Material</th>
                                     <th>Amount</th>
                                     <th>Payable</th>
-                                    <th>Paid</th>
                                     <th>Balance</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="slipsTableBody">
-                                <tr><td colspan="9" class="text-center">Loading...</td></tr>
+                                <tr><td colspan="8" class="text-center">Loading...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -233,7 +213,7 @@
         </div>
     </div>
 
-    <!-- Enhanced View Slip Modal -->
+    <!-- Enhanced View Slip Modal with All Fields -->
     <div class="modal fade" id="viewSlipModal" tabindex="-1">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
@@ -253,7 +233,7 @@
         </div>
     </div>
 
-    <!-- Edit Slip Modal with All 5 Instalments -->
+    <!-- Comprehensive Edit Slip Modal -->
     <div class="modal fade" id="editSlipModal" tabindex="-1">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
@@ -344,111 +324,24 @@
                             </div>
                         </div>
 
-                        <!-- All 5 Instalments with Structured Fields -->
+                        <!-- Instalments -->
                         <h6 class="text-primary mb-3">Payment Instalments</h6>
-
-                        <!-- Instalment 1 -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">Instalment 1</div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <label class="form-label">Date</label>
-                                        <input type="date" class="form-control" id="edit_instalment_1_date" name="instalment_1_date">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Amount</label>
-                                        <input type="number" step="0.01" class="form-control" id="edit_instalment_1_amount" name="instalment_1_amount">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Comment</label>
-                                        <input type="text" class="form-control" id="edit_instalment_1_comment" name="instalment_1_comment">
-                                    </div>
-                                </div>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Instalment 1</label>
+                                <textarea class="form-control" id="edit_instalment_1" name="instalment_1" rows="2"></textarea>
                             </div>
                         </div>
-
-                        <!-- Instalment 2 -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">Instalment 2</div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <label class="form-label">Date</label>
-                                        <input type="date" class="form-control" id="edit_instalment_2_date" name="instalment_2_date">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Amount</label>
-                                        <input type="number" step="0.01" class="form-control" id="edit_instalment_2_amount" name="instalment_2_amount">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Comment</label>
-                                        <input type="text" class="form-control" id="edit_instalment_2_comment" name="instalment_2_comment">
-                                    </div>
-                                </div>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Instalment 2</label>
+                                <textarea class="form-control" id="edit_instalment_2" name="instalment_2" rows="2"></textarea>
                             </div>
                         </div>
-
-                        <!-- Instalment 3 -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">Instalment 3</div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <label class="form-label">Date</label>
-                                        <input type="date" class="form-control" id="edit_instalment_3_date" name="instalment_3_date">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Amount</label>
-                                        <input type="number" step="0.01" class="form-control" id="edit_instalment_3_amount" name="instalment_3_amount">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Comment</label>
-                                        <input type="text" class="form-control" id="edit_instalment_3_comment" name="instalment_3_comment">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Instalment 4 -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">Instalment 4</div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <label class="form-label">Date</label>
-                                        <input type="date" class="form-control" id="edit_instalment_4_date" name="instalment_4_date">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Amount</label>
-                                        <input type="number" step="0.01" class="form-control" id="edit_instalment_4_amount" name="instalment_4_amount">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Comment</label>
-                                        <input type="text" class="form-control" id="edit_instalment_4_comment" name="instalment_4_comment">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Instalment 5 -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">Instalment 5</div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <label class="form-label">Date</label>
-                                        <input type="date" class="form-control" id="edit_instalment_5_date" name="instalment_5_date">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Amount</label>
-                                        <input type="number" step="0.01" class="form-control" id="edit_instalment_5_amount" name="instalment_5_amount">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Comment</label>
-                                        <input type="text" class="form-control" id="edit_instalment_5_comment" name="instalment_5_comment">
-                                    </div>
-                                </div>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Instalment 3</label>
+                                <textarea class="form-control" id="edit_instalment_3" name="instalment_3" rows="2"></textarea>
                             </div>
                         </div>
 
@@ -633,7 +526,6 @@
                                 <td>${slip.material_name || '-'}</td>
                                 <td>₹${parseFloat(slip.amount || 0).toFixed(2)}</td>
                                 <td>₹${parseFloat(slip.payable_amount || 0).toFixed(2)}</td>
-                                <td>₹${parseFloat(slip.total_paid_amount || 0).toFixed(2)}</td>
                                 <td>₹${parseFloat(slip.balance_amount || 0).toFixed(2)}</td>
                                 <td>
                                     <button class="btn btn-sm btn-info" onclick="viewSlip(${slip.id})">View</button>
@@ -645,11 +537,11 @@
                         tbody.innerHTML += row;
                     });
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="9" class="text-center">No slips found</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center">No slips found</td></tr>';
                 }
             } catch (error) {
                 console.error('Error loading slips:', error);
-                document.getElementById('slipsTableBody').innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading slips</td></tr>';
+                document.getElementById('slipsTableBody').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading slips</td></tr>';
             }
         }
 
@@ -663,118 +555,89 @@
                     currentSlipData = result.slip;
                     const slip = result.slip;
 
-                    // Generate instalment display with structured data
-                    let instalmentHTML = '';
-                    for (let i = 1; i <= 5; i++) {
-                        const date = slip[`instalment_${i}_date`];
-                        const amount = slip[`instalment_${i}_amount`];
-                        const comment = slip[`instalment_${i}_comment`];
-
-                        if (date || amount > 0 || comment) {
-                            instalmentHTML += `
-                                <div class="instalment-card">
-                                    <h6>Instalment ${i}</h6>
-                                    <div><strong>Date:</strong> ${date || '-'}</div>
-                                    <div><strong>Amount:</strong> ₹${parseFloat(amount || 0).toFixed(2)}</div>
-                                    <div><strong>Comment:</strong> ${comment || '-'}</div>
-                                </div>
-                            `;
-                        }
-                    }
-
-                    // Create comprehensive view with proper tables
+                    // Create comprehensive view with ALL fields
                     const content = `
                         <div class="view-mode-container">
-                            <!-- Payment Summary -->
-                            <div class="payment-highlight">
-                                <h6>💰 Payment Summary</h6>
-                                <div class="payment-row">
-                                    <span class="payment-label">Payable Amount:</span>
-                                    <span class="payment-value">₹${parseFloat(slip.payable_amount || 0).toFixed(2)}</span>
-                                </div>
-                                <div class="payment-row">
-                                    <span class="payment-label">Total Paid Amount:</span>
-                                    <span class="payment-value">₹${parseFloat(slip.total_paid_amount || 0).toFixed(2)}</span>
-                                </div>
-                                <div class="payment-row">
-                                    <span class="payment-label">Balance Amount:</span>
-                                    <span class="payment-value" style="font-size: 18px;">₹${parseFloat(slip.balance_amount || 0).toFixed(2)}</span>
-                                </div>
-                            </div>
-
                             <div class="view-section">
                                 <h5>Company & Document Details</h5>
-                                <table class="view-table">
-                                    <tr><td>Company Name</td><td>${slip.company_name || '-'}</td></tr>
-                                    <tr><td>Company Address</td><td>${slip.company_address || '-'}</td></tr>
-                                    <tr><td>Document Type</td><td>${slip.document_type || 'Purchase Slip'}</td></tr>
-                                </table>
+                                <div class="view-field"><div class="view-label">Company Name:</div><div class="view-value">${slip.company_name || '-'}</div></div>
+                                <div class="view-field"><div class="view-label">Company Address:</div><div class="view-value">${slip.company_address || '-'}</div></div>
+                                <div class="view-field"><div class="view-label">Document Type:</div><div class="view-value">${slip.document_type || 'Purchase Slip'}</div></div>
                             </div>
 
                             <div class="view-section">
                                 <h5>Basic Information</h5>
-                                <table class="view-table">
-                                    <tr><td>Bill No</td><td>${slip.bill_no}</td></tr>
-                                    <tr><td>Date</td><td>${slip.date}</td></tr>
-                                    <tr><td>Vehicle No</td><td>${slip.vehicle_no || '-'}</td></tr>
-                                    <tr><td>Party Name</td><td>${slip.party_name || '-'}</td></tr>
-                                    <tr><td>Material</td><td>${slip.material_name || '-'}</td></tr>
-                                    <tr><td>Ticket No</td><td>${slip.ticket_no || '-'}</td></tr>
-                                    <tr><td>Broker</td><td>${slip.broker || '-'}</td></tr>
-                                    <tr><td>GST No</td><td>${slip.gst_no || '-'}</td></tr>
-                                </table>
+                                <div class="view-field"><div class="view-label">Bill No:</div><div class="view-value">${slip.bill_no}</div></div>
+                                <div class="view-field"><div class="view-label">Date:</div><div class="view-value">${slip.date}</div></div>
+                                <div class="view-field"><div class="view-label">Vehicle No:</div><div class="view-value">${slip.vehicle_no || '-'}</div></div>
+                                <div class="view-field"><div class="view-label">Party Name:</div><div class="view-value">${slip.party_name || '-'}</div></div>
+                                <div class="view-field"><div class="view-label">Material:</div><div class="view-value">${slip.material_name || '-'}</div></div>
+                                <div class="view-field"><div class="view-label">Ticket No:</div><div class="view-value">${slip.ticket_no || '-'}</div></div>
+                                <div class="view-field"><div class="view-label">Broker:</div><div class="view-value">${slip.broker || '-'}</div></div>
+                                <div class="view-field"><div class="view-label">GST No:</div><div class="view-value">${slip.gst_no || '-'}</div></div>
                             </div>
 
                             <div class="view-section">
                                 <h5>Weight & Rate Details</h5>
-                                <table class="view-table">
-                                    <tr><td>Bags</td><td>${slip.bags || 0}</td></tr>
-                                    <tr><td>Avg Bag Weight</td><td>${slip.avg_bag_weight || 0} kg</td></tr>
-                                    <tr><td>Net Weight</td><td>${slip.net_weight || 0} kg</td></tr>
-                                    <tr><td>Shortage</td><td>${slip.shortage_kg || 0} kg</td></tr>
-                                    <tr><td>Rate</td><td>₹${slip.rate || 0}</td></tr>
-                                </table>
+                                <div class="view-field"><div class="view-label">Bags:</div><div class="view-value">${slip.bags || 0}</div></div>
+                                <div class="view-field"><div class="view-label">Net Weight:</div><div class="view-value">${slip.net_weight || 0} kg</div></div>
+                                <div class="view-field"><div class="view-label">Shortage:</div><div class="view-value">${slip.shortage_kg || 0} kg</div></div>
+                                <div class="view-field"><div class="view-label">Avg Bag Weight:</div><div class="view-value">${slip.avg_bag_weight || 0} kg</div></div>
+                                <div class="view-field"><div class="view-label">Rate Basis:</div><div class="view-value">${slip.rate_basis || '100'} kg</div></div>
+                                <div class="view-field"><div class="view-label">Rate:</div><div class="view-value">₹${slip.rate || 0}</div></div>
+                                <div class="view-field"><div class="view-label">Calculated Rate:</div><div class="view-value">₹${slip.calculated_rate || slip.rate || 0}</div></div>
                             </div>
 
                             <div class="view-section">
                                 <h5>Financial Details</h5>
-                                <table class="view-table">
-                                    <tr><td>Amount</td><td><strong>₹${slip.amount || 0}</strong></td></tr>
-                                    <tr><td>Bank Commission</td><td>₹${slip.bank_commission || 0}</td></tr>
-                                    <tr><td>Postage</td><td>₹${slip.postage || 0}</td></tr>
-                                    <tr><td>Batav (${slip.batav_percent || 0}%)</td><td>₹${slip.batav || 0}</td></tr>
-                                    <tr><td>Dalali (${slip.dalali_rate || 0}/kg)</td><td>₹${slip.dalali || 0}</td></tr>
-                                    <tr><td>Hammali (${slip.hammali_rate || 0}/kg)</td><td>₹${slip.hammali || 0}</td></tr>
-                                    <tr><td>Freight</td><td>₹${slip.freight || 0}</td></tr>
-                                    <tr><td>Rate Diff</td><td>₹${slip.rate_diff || 0}</td></tr>
-                                    <tr><td>Quality Diff</td><td>₹${slip.quality_diff || 0}</td></tr>
-                                    <tr><td>Moisture Ded</td><td>₹${slip.moisture_ded || 0}</td></tr>
-                                    <tr><td>TDS</td><td>₹${slip.tds || 0}</td></tr>
-                                    <tr><td>Total Deduction</td><td><strong>₹${slip.total_deduction || 0}</strong></td></tr>
-                                </table>
+                                <div class="view-field"><div class="view-label">Amount:</div><div class="view-value"><strong>₹${slip.amount || 0}</strong></div></div>
+                                <div class="view-field"><div class="view-label">Bank Commission:</div><div class="view-value">₹${slip.bank_commission || 0}</div></div>
+                                <div class="view-field"><div class="view-label">Postage:</div><div class="view-value">₹${slip.postage || 0}</div></div>
+                                <div class="view-field"><div class="view-label">Batav (${slip.batav_percent || 0}%):</div><div class="view-value">₹${slip.batav || 0}</div></div>
+                                <div class="view-field"><div class="view-label">Dalali (${slip.dalali_rate || 0}/kg):</div><div class="view-value">₹${slip.dalali || 0}</div></div>
+                                <div class="view-field"><div class="view-label">Hammali (${slip.hammali_rate || 0}/kg):</div><div class="view-value">₹${slip.hammali || 0}</div></div>
+                                <div class="view-field"><div class="view-label">Freight:</div><div class="view-value">₹${slip.freight || 0}</div></div>
+                                <div class="view-field"><div class="view-label">Rate Diff:</div><div class="view-value">₹${slip.rate_diff || 0}</div></div>
+                                <div class="view-field"><div class="view-label">Quality Diff:</div><div class="view-value">₹${slip.quality_diff || 0}</div></div>
+                                <div class="view-field"><div class="view-label">Moisture Ded (${slip.moisture_ded_percent || 0}%):</div><div class="view-value">₹${slip.moisture_ded || 0}</div></div>
+                                <div class="view-field"><div class="view-label">TDS:</div><div class="view-value">₹${slip.tds || 0}</div></div>
+                                <div class="view-field"><div class="view-label">Total Deduction:</div><div class="view-value"><strong>₹${slip.total_deduction || 0}</strong></div></div>
+                                <div class="view-field"><div class="view-label">Payable Amount:</div><div class="view-value"><strong style="color:#2e7d32">₹${slip.payable_amount || 0}</strong></div></div>
                             </div>
 
-                            ${instalmentHTML ? `
+                            <div class="view-section">
+                                <h5>Payment Information</h5>
+                                <div class="view-field"><div class="view-label">Payment Method:</div><div class="view-value">${slip.payment_method || '-'}</div></div>
+                                <div class="view-field"><div class="view-label">Payment Date:</div><div class="view-value">${slip.payment_date || '-'}</div></div>
+                                <div class="view-field"><div class="view-label">Payment Amount:</div><div class="view-value">₹${slip.payment_amount || 0}</div></div>
+                                <div class="view-field"><div class="view-label">Payment Due Date:</div><div class="view-value">${slip.payment_due_date || '-'}</div></div>
+                                ${slip.payment_bank_account ? `<div class="view-field"><div class="view-label">Bank Account:</div><div class="view-value">${slip.payment_bank_account}</div></div>` : ''}
+                                ${slip.payment_due_comment ? `<div class="view-field"><div class="view-label">Due Comment:</div><div class="view-value">${slip.payment_due_comment}</div></div>` : ''}
+                            </div>
+
+                            ${slip.instalment_1 || slip.instalment_2 || slip.instalment_3 ? `
                             <div class="view-section">
                                 <h5>Payment Instalments</h5>
-                                ${instalmentHTML}
+                                ${slip.instalment_1 ? `<div class="view-field"><div class="view-label">Instalment 1:</div><div class="view-value">${slip.instalment_1}</div></div>` : ''}
+                                ${slip.instalment_2 ? `<div class="view-field"><div class="view-label">Instalment 2:</div><div class="view-value">${slip.instalment_2}</div></div>` : ''}
+                                ${slip.instalment_3 ? `<div class="view-field"><div class="view-label">Instalment 3:</div><div class="view-value">${slip.instalment_3}</div></div>` : ''}
+                                ${slip.instalment_4 ? `<div class="view-field"><div class="view-label">Instalment 4:</div><div class="view-value">${slip.instalment_4}</div></div>` : ''}
+                                ${slip.instalment_5 ? `<div class="view-field"><div class="view-label">Instalment 5:</div><div class="view-value">${slip.instalment_5}</div></div>` : ''}
                             </div>
                             ` : ''}
 
                             ${slip.quality_diff_comment || slip.paddy_unloading_godown ? `
                             <div class="view-section">
                                 <h5>Additional Comments</h5>
-                                ${slip.quality_diff_comment ? `<p><strong>Quality Diff:</strong> ${slip.quality_diff_comment}</p>` : ''}
-                                ${slip.paddy_unloading_godown ? `<p><strong>Paddy Godown:</strong> ${slip.paddy_unloading_godown}</p>` : ''}
+                                ${slip.quality_diff_comment ? `<div class="view-field"><div class="view-label">Quality Diff Comment:</div><div class="view-value">${slip.quality_diff_comment}</div></div>` : ''}
+                                ${slip.paddy_unloading_godown ? `<div class="view-field"><div class="view-label">Paddy Unloading Godown:</div><div class="view-value">${slip.paddy_unloading_godown}</div></div>` : ''}
                             </div>
                             ` : ''}
 
                             <div class="view-section">
                                 <h5>Signatures</h5>
-                                <table class="view-table">
-                                    <tr><td>Prepared By</td><td>${slip.prepared_by || '-'}</td></tr>
-                                    <tr><td>Authorised Sign</td><td>${slip.authorised_sign || '-'}</td></tr>
-                                </table>
+                                <div class="view-field"><div class="view-label">Prepared By:</div><div class="view-value">${slip.prepared_by || '-'}</div></div>
+                                <div class="view-field"><div class="view-label">Authorised Sign:</div><div class="view-value">${slip.authorised_sign || '-'}</div></div>
                             </div>
                         </div>
                     `;
@@ -807,14 +670,9 @@
             document.getElementById('edit_payment_bank_account').value = slip.payment_bank_account || '';
             document.getElementById('edit_payment_due_date').value = slip.payment_due_date || '';
             document.getElementById('edit_payment_due_comment').value = slip.payment_due_comment || '';
-
-            // All 5 instalments
-            for (let i = 1; i <= 5; i++) {
-                document.getElementById(`edit_instalment_${i}_date`).value = slip[`instalment_${i}_date`] || '';
-                document.getElementById(`edit_instalment_${i}_amount`).value = slip[`instalment_${i}_amount`] || '';
-                document.getElementById(`edit_instalment_${i}_comment`).value = slip[`instalment_${i}_comment`] || '';
-            }
-
+            document.getElementById('edit_instalment_1').value = slip.instalment_1 || '';
+            document.getElementById('edit_instalment_2').value = slip.instalment_2 || '';
+            document.getElementById('edit_instalment_3').value = slip.instalment_3 || '';
             document.getElementById('edit_quality_diff_comment').value = slip.quality_diff_comment || '';
             document.getElementById('edit_paddy_unloading_godown').value = slip.paddy_unloading_godown || '';
             document.getElementById('edit_prepared_by').value = slip.prepared_by || '';
@@ -912,7 +770,7 @@
                                     ${showEditDelete ? `
                                         <button class="btn btn-sm btn-warning" onclick="showEditUserModal(${usr.id})">Edit</button>
                                         <button class="btn btn-sm btn-danger" onclick="deleteUser(${usr.id})" ${usr.username === 'admin' ? 'disabled' : ''}>Delete</button>
-                                    ` : '<span class="text-muted">No access</span>'}
+                                    ` : '<span class="text-muted">-</span>'}
                                 </td>
                             </tr>
                         `;

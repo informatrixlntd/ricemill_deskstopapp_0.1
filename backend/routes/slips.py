@@ -484,7 +484,7 @@ def get_unloading_godowns():
     cursor = None
     try:
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
         cursor.execute('''
             SELECT id, name
@@ -492,8 +492,7 @@ def get_unloading_godowns():
             ORDER BY name ASC
         ''')
 
-        rows = cursor.fetchall()
-        godowns = [{'id': row['id'], 'name': row['name']} for row in rows]
+        godowns = cursor.fetchall()
 
         print(f"✓ Fetched {len(godowns)} unloading godowns")
 
@@ -535,10 +534,10 @@ def add_unloading_godown():
             }), 400
 
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
-        # Check if it already exists
-        cursor.execute('SELECT id, name FROM unloading_godowns WHERE name = ?', (godown_name,))
+        # Check if it already exists (MySQL uses %s placeholder)
+        cursor.execute('SELECT id, name FROM unloading_godowns WHERE name = %s', (godown_name,))
         existing = cursor.fetchone()
 
         if existing:
@@ -549,8 +548,8 @@ def add_unloading_godown():
                 'message': 'Godown already exists'
             }), 200
 
-        # Insert new godown
-        cursor.execute('INSERT INTO unloading_godowns (name) VALUES (?)', (godown_name,))
+        # Insert new godown (MySQL uses %s placeholder)
+        cursor.execute('INSERT INTO unloading_godowns (name) VALUES (%s)', (godown_name,))
         conn.commit()
 
         new_id = cursor.lastrowid
@@ -558,8 +557,7 @@ def add_unloading_godown():
 
         # Fetch all godowns to return updated list
         cursor.execute('SELECT id, name FROM unloading_godowns ORDER BY name ASC')
-        rows = cursor.fetchall()
-        all_godowns = [{'id': row['id'], 'name': row['name']} for row in rows]
+        all_godowns = cursor.fetchall()
 
         return jsonify({
             'success': True,

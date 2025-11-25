@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 import sys
 import os
 from datetime import datetime
-import sqlite3
+import mysql.connector
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -72,13 +72,13 @@ def login():
 
 @auth_bp.route('/api/users', methods=['GET'])
 def get_users():
-    """Get all users - SQLite version with enhanced error handling"""
+    """Get all users - MySQL version with dictionary cursor"""
     conn = None
     cursor = None
     try:
-        # Get SQLite connection
+        # Get MySQL connection
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
         # Execute query with explicit column selection
         cursor.execute('''
@@ -94,20 +94,16 @@ def get_users():
             ORDER BY created_at DESC
         ''')
 
-        # Fetch all rows and convert to list of dicts
-        rows = cursor.fetchall()
-        users = []
+        # Fetch all rows - already dictionaries due to dictionary=True
+        users = cursor.fetchall()
 
-        for row in rows:
-            users.append({
-                'id': row['id'],
-                'username': row['username'],
-                'full_name': row['full_name'] or '',
-                'role': row['role'],
-                'is_active': bool(row['is_active']),
-                'created_at': row['created_at'] or '',
-                'last_login': row['last_login'] or None
-            })
+        # Format datetime fields for JSON
+        for user in users:
+            if user.get('created_at'):
+                user['created_at'] = str(user['created_at'])
+            if user.get('last_login'):
+                user['last_login'] = str(user['last_login'])
+            user['is_active'] = bool(user.get('is_active', True))
 
         # Log for debugging
         print(f"✓ Fetched {len(users)} users from database")
@@ -117,7 +113,7 @@ def get_users():
             'users': users
         }), 200
 
-    except sqlite3.Error as db_error:
+    except mysql.connector.Error as db_error:
         error_msg = f"Database error: {str(db_error)}"
         print(f"❌ {error_msg}")
         import traceback

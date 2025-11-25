@@ -1,21 +1,83 @@
-import sqlite3
+import mysql.connector
+from mysql.connector.pooling import MySQLConnectionPool
 import os
-from threading import Lock
 
-# Database file path
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'purchase_slips.db')
+# MySQL Configuration
+DB_CONFIG = {
+    'host': 'localhost',
+    'port': 1396,
+    'user': 'root',
+    'password': 'root',
+    'database': 'purchase_slips_db'
+}
 
-# Thread lock for database operations
-db_lock = Lock()
+# Global connection pool
+connection_pool = None
+
+def init_connection_pool():
+    """
+    Initialize MySQL connection pool using mysql.connector
+    """
+    global connection_pool
+    try:
+        connection_pool = MySQLConnectionPool(
+            pool_name="purchase_pool",
+            pool_size=10,
+            pool_reset_session=True,
+            **DB_CONFIG
+        )
+        print("✓ MySQL connection pool created successfully (size: 10)")
+    except mysql.connector.Error as err:
+        if err.errno == 1049:
+            print("Database doesn't exist. Creating database...")
+            create_database()
+            connection_pool = MySQLConnectionPool(
+                pool_name="purchase_pool",
+                pool_size=10,
+                pool_reset_session=True,
+                **DB_CONFIG
+            )
+        else:
+            print(f"❌ Error creating connection pool: {err}")
+            raise
+
+def create_database():
+    """Create the database if it doesn't exist"""
+    conn = None
+    cursor = None
+    try:
+        temp_config = DB_CONFIG.copy()
+        database_name = temp_config.pop('database')
+
+        conn = mysql.connector.connect(**temp_config)
+        cursor = conn.cursor()
+        cursor.execute(f"CREATE DATABASE IF NOT EXISTS {database_name}")
+        print(f"✓ Database '{database_name}' created successfully")
+    except mysql.connector.Error as err:
+        print(f"❌ Error creating database: {err}")
+        raise
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 def get_db_connection():
     """
-    Get a SQLite database connection
-    Returns a connection with row_factory set to sqlite3.Row for dictionary-like access
+    Get a database connection from the pool
+    ALWAYS returns a connection with dictionary cursor support
     """
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    return conn
+    global connection_pool
+    if connection_pool is None:
+        init_connection_pool()
+
+    try:
+        conn = connection_pool.get_connection()
+        conn.ping(reconnect=True, attempts=3, delay=2)
+        return conn
+    except mysql.connector.Error as e:
+        print(f"❌ Error getting connection from pool: {e}")
+        raise
 
 def init_db():
     """
@@ -24,91 +86,93 @@ def init_db():
     conn = None
     cursor = None
     try:
-        print(f"✓ Initializing database at: {DB_PATH}")
+        init_connection_pool()
+
+        print(f"✓ Initializing database: {DB_CONFIG['database']}")
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
         # Create purchase_slips table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS purchase_slips (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INT AUTO_INCREMENT PRIMARY KEY,
                 company_name TEXT,
                 company_address TEXT,
-                document_type TEXT DEFAULT 'Purchase Slip',
-                vehicle_no TEXT,
-                date TEXT NOT NULL,
-                bill_no INTEGER NOT NULL,
+                document_type VARCHAR(255) DEFAULT 'Purchase Slip',
+                vehicle_no VARCHAR(255),
+                date VARCHAR(50) NOT NULL,
+                bill_no INT NOT NULL,
                 party_name TEXT,
                 material_name TEXT,
-                ticket_no TEXT,
-                broker TEXT,
+                ticket_no VARCHAR(255),
+                broker VARCHAR(255),
                 terms_of_delivery TEXT,
-                sup_inv_no TEXT,
-                gst_no TEXT,
-                bags REAL DEFAULT 0,
-                avg_bag_weight REAL DEFAULT 0,
-                net_weight REAL DEFAULT 0,
-                shortage_kg REAL DEFAULT 0,
-                rate REAL DEFAULT 0,
-                rate_basis TEXT DEFAULT '100',
-                calculated_rate REAL DEFAULT 0,
-                amount REAL DEFAULT 0,
-                bank_commission REAL DEFAULT 0,
-                postage REAL DEFAULT 0,
-                batav_percent REAL DEFAULT 0,
-                batav REAL DEFAULT 0,
-                shortage_percent REAL DEFAULT 0,
-                shortage REAL DEFAULT 0,
-                dalali_rate REAL DEFAULT 0,
-                dalali REAL DEFAULT 0,
-                hammali_rate REAL DEFAULT 0,
-                hammali REAL DEFAULT 0,
-                freight REAL DEFAULT 0,
-                rate_diff REAL DEFAULT 0,
-                quality_diff REAL DEFAULT 0,
+                sup_inv_no VARCHAR(255),
+                gst_no VARCHAR(255),
+                bags DOUBLE DEFAULT 0,
+                avg_bag_weight DOUBLE DEFAULT 0,
+                net_weight DOUBLE DEFAULT 0,
+                shortage_kg DOUBLE DEFAULT 0,
+                rate DOUBLE DEFAULT 0,
+                rate_basis VARCHAR(10) DEFAULT '100',
+                calculated_rate DOUBLE DEFAULT 0,
+                amount DOUBLE DEFAULT 0,
+                bank_commission DOUBLE DEFAULT 0,
+                postage DOUBLE DEFAULT 0,
+                batav_percent DOUBLE DEFAULT 0,
+                batav DOUBLE DEFAULT 0,
+                shortage_percent DOUBLE DEFAULT 0,
+                shortage DOUBLE DEFAULT 0,
+                dalali_rate DOUBLE DEFAULT 0,
+                dalali DOUBLE DEFAULT 0,
+                hammali_rate DOUBLE DEFAULT 0,
+                hammali DOUBLE DEFAULT 0,
+                freight DOUBLE DEFAULT 0,
+                rate_diff DOUBLE DEFAULT 0,
+                quality_diff DOUBLE DEFAULT 0,
                 quality_diff_comment TEXT,
-                moisture_ded REAL DEFAULT 0,
-                moisture_ded_percent REAL DEFAULT 0,
-                tds REAL DEFAULT 0,
-                total_deduction REAL DEFAULT 0,
-                payable_amount REAL DEFAULT 0,
-                payment_method TEXT,
-                payment_date TEXT,
-                payment_amount REAL DEFAULT 0,
+                moisture_ded DOUBLE DEFAULT 0,
+                moisture_ded_percent DOUBLE DEFAULT 0,
+                tds DOUBLE DEFAULT 0,
+                total_deduction DOUBLE DEFAULT 0,
+                payable_amount DOUBLE DEFAULT 0,
+                payment_method VARCHAR(255),
+                payment_date VARCHAR(50),
+                payment_amount DOUBLE DEFAULT 0,
                 payment_bank_account TEXT,
-                payment_due_date TEXT,
+                payment_due_date VARCHAR(50),
                 payment_due_comment TEXT,
-                instalment_1_date TEXT,
-                instalment_1_amount REAL DEFAULT 0,
+                instalment_1_date VARCHAR(50),
+                instalment_1_amount DOUBLE DEFAULT 0,
                 instalment_1_comment TEXT,
-                instalment_2_date TEXT,
-                instalment_2_amount REAL DEFAULT 0,
+                instalment_2_date VARCHAR(50),
+                instalment_2_amount DOUBLE DEFAULT 0,
                 instalment_2_comment TEXT,
-                instalment_3_date TEXT,
-                instalment_3_amount REAL DEFAULT 0,
+                instalment_3_date VARCHAR(50),
+                instalment_3_amount DOUBLE DEFAULT 0,
                 instalment_3_comment TEXT,
-                instalment_4_date TEXT,
-                instalment_4_amount REAL DEFAULT 0,
+                instalment_4_date VARCHAR(50),
+                instalment_4_amount DOUBLE DEFAULT 0,
                 instalment_4_comment TEXT,
-                instalment_5_date TEXT,
-                instalment_5_amount REAL DEFAULT 0,
+                instalment_5_date VARCHAR(50),
+                instalment_5_amount DOUBLE DEFAULT 0,
                 instalment_5_comment TEXT,
-                prepared_by TEXT,
-                authorised_sign TEXT,
+                prepared_by VARCHAR(255),
+                authorised_sign VARCHAR(255),
                 paddy_unloading_godown TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
 
-        # Create users table if it doesn't exist
+        # Create users table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                full_name TEXT,
-                role TEXT DEFAULT 'user',
-                is_active INTEGER DEFAULT 1,
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                full_name VARCHAR(255),
+                role VARCHAR(50) DEFAULT 'user',
+                is_active BOOLEAN DEFAULT TRUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 last_login TIMESTAMP NULL
             )
@@ -117,43 +181,43 @@ def init_db():
         # Create unloading_godowns table for dynamic dropdown
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS unloading_godowns (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT UNIQUE NOT NULL,
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) UNIQUE NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
 
-        # Check and add missing columns to purchase_slips if needed
-        cursor.execute("PRAGMA table_info(purchase_slips)")
-        existing_columns = {row[1] for row in cursor.fetchall()}
+        # Check and add missing columns to purchase_slips
+        cursor.execute("SHOW COLUMNS FROM purchase_slips")
+        existing_columns = {row['Field'] for row in cursor.fetchall()}
 
         columns_to_add = {
-            'shortage_kg': "REAL DEFAULT 0",
-            'rate_basis': "TEXT DEFAULT '100'",
-            'calculated_rate': "REAL DEFAULT 0",
-            'postage': "REAL DEFAULT 0",
-            'payment_due_date': "TEXT",
+            'shortage_kg': "DOUBLE DEFAULT 0",
+            'rate_basis': "VARCHAR(10) DEFAULT '100'",
+            'calculated_rate': "DOUBLE DEFAULT 0",
+            'postage': "DOUBLE DEFAULT 0",
+            'payment_due_date': "VARCHAR(50)",
             'payment_due_comment': "TEXT",
             'payment_bank_account': "TEXT",
-            'instalment_1_date': "TEXT",
-            'instalment_1_amount': "REAL DEFAULT 0",
+            'instalment_1_date': "VARCHAR(50)",
+            'instalment_1_amount': "DOUBLE DEFAULT 0",
             'instalment_1_comment': "TEXT",
-            'instalment_2_date': "TEXT",
-            'instalment_2_amount': "REAL DEFAULT 0",
+            'instalment_2_date': "VARCHAR(50)",
+            'instalment_2_amount': "DOUBLE DEFAULT 0",
             'instalment_2_comment': "TEXT",
-            'instalment_3_date': "TEXT",
-            'instalment_3_amount': "REAL DEFAULT 0",
+            'instalment_3_date': "VARCHAR(50)",
+            'instalment_3_amount': "DOUBLE DEFAULT 0",
             'instalment_3_comment': "TEXT",
-            'instalment_4_date': "TEXT",
-            'instalment_4_amount': "REAL DEFAULT 0",
+            'instalment_4_date': "VARCHAR(50)",
+            'instalment_4_amount': "DOUBLE DEFAULT 0",
             'instalment_4_comment': "TEXT",
-            'instalment_5_date': "TEXT",
-            'instalment_5_amount': "REAL DEFAULT 0",
+            'instalment_5_date': "VARCHAR(50)",
+            'instalment_5_amount': "DOUBLE DEFAULT 0",
             'instalment_5_comment': "TEXT",
             'quality_diff_comment': "TEXT",
-            'moisture_ded_percent': "REAL DEFAULT 0",
-            'prepared_by': "TEXT",
-            'authorised_sign': "TEXT",
+            'moisture_ded_percent': "DOUBLE DEFAULT 0",
+            'prepared_by': "VARCHAR(255)",
+            'authorised_sign': "VARCHAR(255)",
             'paddy_unloading_godown': "TEXT"
         }
 
@@ -162,24 +226,26 @@ def init_db():
                 try:
                     cursor.execute(f"ALTER TABLE purchase_slips ADD COLUMN {col_name} {col_type}")
                     print(f"✓ Added column: {col_name}")
-                except sqlite3.OperationalError as e:
-                    if "duplicate column" not in str(e).lower():
-                        print(f"Warning: Could not add column {col_name}: {e}")
+                except mysql.connector.Error as err:
+                    if err.errno != 1060:  # Ignore duplicate column error
+                        print(f"Warning: Could not add column {col_name}: {err}")
 
         # Create default admin user if no users exist
-        cursor.execute("SELECT COUNT(*) FROM users")
-        user_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) as count FROM users")
+        result = cursor.fetchone()
+        user_count = result['count']
 
         if user_count == 0:
             cursor.execute('''
                 INSERT INTO users (username, password, full_name, role)
-                VALUES ('admin', 'admin', 'Administrator', 'admin')
-            ''')
+                VALUES (%s, %s, %s, %s)
+            ''', ('admin', 'admin', 'Administrator', 'admin'))
             print("✓ Default admin user created (username: admin, password: admin)")
 
-        # Add some default unloading godowns if table is empty
-        cursor.execute("SELECT COUNT(*) FROM unloading_godowns")
-        godown_count = cursor.fetchone()[0]
+        # Add default unloading godowns if table is empty
+        cursor.execute("SELECT COUNT(*) as count FROM unloading_godowns")
+        result = cursor.fetchone()
+        godown_count = result['count']
 
         if godown_count == 0:
             default_godowns = [
@@ -189,13 +255,13 @@ def init_db():
                 'Storage Unit 1'
             ]
             for godown in default_godowns:
-                cursor.execute('INSERT OR IGNORE INTO unloading_godowns (name) VALUES (?)', (godown,))
+                cursor.execute('INSERT IGNORE INTO unloading_godowns (name) VALUES (%s)', (godown,))
             print(f"✓ Added {len(default_godowns)} default unloading godowns")
 
         conn.commit()
         print("✓ Database tables initialized successfully")
 
-    except sqlite3.Error as err:
+    except mysql.connector.Error as err:
         print(f"❌ Error initializing database: {err}")
         if conn:
             conn.rollback()
@@ -214,15 +280,15 @@ def get_next_bill_no():
     cursor = None
     try:
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         cursor.execute('SELECT MAX(bill_no) as max_bill FROM purchase_slips')
         result = cursor.fetchone()
 
-        if result[0] is None:
+        if result['max_bill'] is None:
             return 1
-        return result[0] + 1
+        return result['max_bill'] + 1
 
-    except sqlite3.Error as err:
+    except mysql.connector.Error as err:
         print(f"❌ Error getting next bill number: {err}")
         raise
     finally:

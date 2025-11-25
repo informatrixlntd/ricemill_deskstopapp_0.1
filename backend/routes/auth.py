@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 import sys
 import os
 from datetime import datetime
-import mysql.connector
+import sqlite3
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -72,17 +72,13 @@ def login():
 
 @auth_bp.route('/api/users', methods=['GET'])
 def get_users():
-    """Get all users - enhanced error handling and connection management"""
+    """Get all users - SQLite version with enhanced error handling"""
     conn = None
     cursor = None
     try:
-        # Get connection with retry logic
+        # Get SQLite connection
         conn = get_db_connection()
-
-        # Test connection before use
-        conn.ping(reconnect=True)
-
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
 
         # Execute query with explicit column selection
         cursor.execute('''
@@ -98,42 +94,34 @@ def get_users():
             ORDER BY created_at DESC
         ''')
 
-        users = cursor.fetchall()
+        # Fetch all rows and convert to list of dicts
+        rows = cursor.fetchall()
+        users = []
+
+        for row in rows:
+            users.append({
+                'id': row['id'],
+                'username': row['username'],
+                'full_name': row['full_name'] or '',
+                'role': row['role'],
+                'is_active': bool(row['is_active']),
+                'created_at': row['created_at'] or '',
+                'last_login': row['last_login'] or None
+            })
 
         # Log for debugging
         print(f"✓ Fetched {len(users)} users from database")
-
-        # Format datetime objects for JSON serialization
-        for user in users:
-            # Handle created_at
-            if user.get('created_at') and user['created_at'] is not None:
-                try:
-                    user['created_at'] = user['created_at'].strftime('%Y-%m-%d %H:%M:%S')
-                except Exception as e:
-                    print(f"Warning: Could not format created_at: {e}")
-                    user['created_at'] = str(user['created_at'])
-
-            # Handle last_login
-            if user.get('last_login') and user['last_login'] is not None:
-                try:
-                    user['last_login'] = user['last_login'].strftime('%Y-%m-%d %H:%M:%S')
-                except Exception as e:
-                    print(f"Warning: Could not format last_login: {e}")
-                    user['last_login'] = str(user['last_login'])
-            else:
-                user['last_login'] = None
-
-            # Ensure boolean for is_active
-            user['is_active'] = bool(user.get('is_active', True))
 
         return jsonify({
             'success': True,
             'users': users
         }), 200
 
-    except mysql.connector.Error as db_error:
+    except sqlite3.Error as db_error:
         error_msg = f"Database error: {str(db_error)}"
         print(f"❌ {error_msg}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'message': error_msg,

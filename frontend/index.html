@@ -254,7 +254,19 @@
                     <div class="row mb-4">
                         <div class="col-md-12">
                             <label class="form-label">Paddy Unloading Godown</label>
-                            <textarea class="form-control" name="paddy_unloading_godown" id="paddy_unloading_godown" rows="3" placeholder="Enter details about paddy unloading and godown"></textarea>
+                            <input
+                                type="text"
+                                class="form-control"
+                                name="paddy_unloading_godown"
+                                id="paddy_unloading_godown"
+                                list="godownList"
+                                placeholder="Type or select from dropdown"
+                                autocomplete="off"
+                            >
+                            <datalist id="godownList">
+                                <!-- Options will be loaded dynamically -->
+                            </datalist>
+                            <small class="form-text text-muted">Type a new name to add it, or select from existing options</small>
                         </div>
                     </div>
 

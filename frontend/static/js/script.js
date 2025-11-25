@@ -181,4 +181,82 @@ document.addEventListener('DOMContentLoaded', function() {
 
     calculateCalculatedRate();
     calculateFields();
+
+    // ===== DYNAMIC GODOWN DROPDOWN =====
+    const godownInput = document.getElementById('paddy_unloading_godown');
+    const godownDatalist = document.getElementById('godownList');
+    let allGodowns = [];
+
+    // Load existing godowns on page load
+    async function loadGodowns() {
+        try {
+            const response = await fetch('/api/unloading-godowns');
+            const result = await response.json();
+
+            if (result.success) {
+                allGodowns = result.godowns;
+                updateGodownDatalist();
+                console.log(`✓ Loaded ${allGodowns.length} godowns`);
+            }
+        } catch (error) {
+            console.error('Error loading godowns:', error);
+        }
+    }
+
+    // Update datalist with godown options
+    function updateGodownDatalist() {
+        godownDatalist.innerHTML = '';
+        allGodowns.forEach(godown => {
+            const option = document.createElement('option');
+            option.value = godown.name;
+            godownDatalist.appendChild(option);
+        });
+    }
+
+    // Check if godown exists, if not add it
+    async function handleGodownInput() {
+        const enteredValue = godownInput.value.trim();
+
+        if (!enteredValue) return;
+
+        // Check if it already exists in the list
+        const exists = allGodowns.some(g => g.name.toLowerCase() === enteredValue.toLowerCase());
+
+        if (!exists) {
+            // Add new godown to database
+            try {
+                const response = await fetch('/api/unloading-godowns', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name: enteredValue })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    console.log(`✓ Added new godown: ${enteredValue}`);
+                    allGodowns = result.godowns; // Update with new list from server
+                    updateGodownDatalist();
+                }
+            } catch (error) {
+                console.error('Error adding godown:', error);
+            }
+        }
+    }
+
+    // Listen for when user finishes typing or selects an option
+    godownInput.addEventListener('blur', handleGodownInput);
+
+    // Also check when user presses Enter while focused on the field
+    godownInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleGodownInput();
+        }
+    });
+
+    // Load godowns when page loads
+    loadGodowns();
 });

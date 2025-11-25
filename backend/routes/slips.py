@@ -473,3 +473,113 @@ def print_slip(slip_id):
             cursor.close()
         if conn:
             conn.close()
+
+
+# UNLOADING GODOWN DYNAMIC DROPDOWN APIs
+
+@slips_bp.route('/api/unloading-godowns', methods=['GET'])
+def get_unloading_godowns():
+    """Get all unloading godown names for dropdown"""
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            SELECT id, name
+            FROM unloading_godowns
+            ORDER BY name ASC
+        ''')
+
+        rows = cursor.fetchall()
+        godowns = [{'id': row['id'], 'name': row['name']} for row in rows]
+
+        print(f"✓ Fetched {len(godowns)} unloading godowns")
+
+        return jsonify({
+            'success': True,
+            'godowns': godowns
+        }), 200
+
+    except Exception as e:
+        error_msg = f"Error fetching unloading godowns: {str(e)}"
+        print(f"❌ {error_msg}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': error_msg
+        }), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
+@slips_bp.route('/api/unloading-godowns', methods=['POST'])
+def add_unloading_godown():
+    """Add a new unloading godown (or return existing if duplicate)"""
+    conn = None
+    cursor = None
+    try:
+        data = request.get_json()
+        godown_name = data.get('name', '').strip()
+
+        if not godown_name:
+            return jsonify({
+                'success': False,
+                'message': 'Godown name is required'
+            }), 400
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Check if it already exists
+        cursor.execute('SELECT id, name FROM unloading_godowns WHERE name = ?', (godown_name,))
+        existing = cursor.fetchone()
+
+        if existing:
+            print(f"✓ Godown '{godown_name}' already exists")
+            return jsonify({
+                'success': True,
+                'godown': {'id': existing['id'], 'name': existing['name']},
+                'message': 'Godown already exists'
+            }), 200
+
+        # Insert new godown
+        cursor.execute('INSERT INTO unloading_godowns (name) VALUES (?)', (godown_name,))
+        conn.commit()
+
+        new_id = cursor.lastrowid
+        print(f"✓ Added new godown: {godown_name} (ID: {new_id})")
+
+        # Fetch all godowns to return updated list
+        cursor.execute('SELECT id, name FROM unloading_godowns ORDER BY name ASC')
+        rows = cursor.fetchall()
+        all_godowns = [{'id': row['id'], 'name': row['name']} for row in rows]
+
+        return jsonify({
+            'success': True,
+            'godown': {'id': new_id, 'name': godown_name},
+            'godowns': all_godowns,
+            'message': 'Godown added successfully'
+        }), 201
+
+    except Exception as e:
+        error_msg = f"Error adding unloading godown: {str(e)}"
+        print(f"❌ {error_msg}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': error_msg
+        }), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()

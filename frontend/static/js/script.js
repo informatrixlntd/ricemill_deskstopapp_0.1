@@ -185,6 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===== DYNAMIC GODOWN DROPDOWN =====
     const godownInput = document.getElementById('paddy_unloading_godown');
     const godownDatalist = document.getElementById('godownList');
+    const saveGodownBtn = document.getElementById('saveGodownBtn');
     let allGodowns = [];
 
     // Load existing godowns on page load
@@ -213,49 +214,58 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Check if godown exists, if not add it
-    async function handleGodownInput() {
+    // Save new godown when button is clicked
+    async function saveNewGodown() {
         const enteredValue = godownInput.value.trim();
 
-        if (!enteredValue) return;
+        if (!enteredValue) {
+            alert('Please enter a godown name');
+            return;
+        }
 
         // Check if it already exists in the list
         const exists = allGodowns.some(g => g.name.toLowerCase() === enteredValue.toLowerCase());
 
-        if (!exists) {
-            // Add new godown to database
-            try {
-                const response = await fetch('/api/unloading-godowns', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ name: enteredValue })
-                });
+        if (exists) {
+            alert('This godown already exists in the list');
+            return;
+        }
 
-                const result = await response.json();
+        // Add new godown to database
+        try {
+            saveGodownBtn.disabled = true;
+            saveGodownBtn.textContent = 'Saving...';
 
-                if (result.success) {
-                    console.log(`✓ Added new godown: ${enteredValue}`);
-                    allGodowns = result.godowns; // Update with new list from server
-                    updateGodownDatalist();
-                }
-            } catch (error) {
-                console.error('Error adding godown:', error);
+            const response = await fetch('/api/unloading-godowns', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: enteredValue })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                console.log(`✓ Added new godown: ${enteredValue}`);
+                allGodowns = result.godowns; // Update with new list from server
+                updateGodownDatalist();
+                alert(`Godown "${enteredValue}" saved successfully!`);
+                // Keep the value selected in the input
+            } else {
+                alert('Error saving godown: ' + result.message);
             }
+        } catch (error) {
+            console.error('Error adding godown:', error);
+            alert('Error saving godown. Please try again.');
+        } finally {
+            saveGodownBtn.disabled = false;
+            saveGodownBtn.textContent = 'Save New Godown';
         }
     }
 
-    // Listen for when user finishes typing or selects an option
-    godownInput.addEventListener('blur', handleGodownInput);
-
-    // Also check when user presses Enter while focused on the field
-    godownInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            handleGodownInput();
-        }
-    });
+    // Attach click event to Save button
+    saveGodownBtn.addEventListener('click', saveNewGodown);
 
     // Load godowns when page loads
     loadGodowns();

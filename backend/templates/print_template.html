@@ -260,20 +260,40 @@
                     <span class="field-value">{{ "%.2f"|format(slip.avg_bag_weight or 0) }} kg</span>
                 </div>
                 <div class="field">
-                    <span class="field-label">Net Weight:</span>
-                    <span class="field-value">{{ "%.2f"|format(slip.net_weight or 0) }} kg</span>
+                    <span class="field-label">Net Weight (KG):</span>
+                    <span class="field-value">{{ "%.2f"|format(slip.net_weight_kg or 0) }} kg</span>
                 </div>
                 <div class="field">
-                    <span class="field-label">Rate:</span>
-                    <span class="field-value">₹ {{ "%.2f"|format(slip.rate or 0) }}</span>
+                    <span class="field-label">Gunny Weight (KG):</span>
+                    <span class="field-value">{{ "%.2f"|format(slip.gunny_weight_kg or 0) }} kg</span>
+                </div>
+                <div class="field">
+                    <span class="field-label">Final Weight (KG):</span>
+                    <span class="field-value">{{ "%.2f"|format(slip.final_weight_kg or 0) }} kg</span>
+                </div>
+                <div class="field">
+                    <span class="field-label">Weight (Quintal):</span>
+                    <span class="field-value">{{ "%.3f"|format(slip.weight_quintal or 0) }}</span>
+                </div>
+                <div class="field">
+                    <span class="field-label">Weight (Khandi):</span>
+                    <span class="field-value">{{ "%.3f"|format(slip.weight_khandi or 0) }}</span>
+                </div>
+                <div class="field">
+                    <span class="field-label">Rate Basis:</span>
+                    <span class="field-value">{{ slip.rate_basis or 'Quintal' }}</span>
+                </div>
+                <div class="field">
+                    <span class="field-label">Rate Value:</span>
+                    <span class="field-value">₹ {{ "%.2f"|format(slip.rate_value or 0) }}</span>
                 </div>
             </div>
         </div>
 
         <div class="calculation-section">
             <div class="calc-row subtotal">
-                <span><strong>Amount:</strong></span>
-                <span>₹ {{ "%.2f"|format(slip.amount or 0) }}</span>
+                <span><strong>Total Purchase Amount:</strong></span>
+                <span>₹ {{ "%.2f"|format(slip.total_purchase_amount or 0) }}</span>
             </div>
             <div class="calc-row">
                 <span>Bank Commission & Postage:</span>
@@ -282,10 +302,6 @@
             <div class="calc-row">
                 <span>Batav ({{ "%.2f"|format(slip.batav_percent or 0) }}%):</span>
                 <span>₹ {{ "%.2f"|format(slip.batav or 0) }}</span>
-            </div>
-            <div class="calc-row">
-                <span>Shortage ({{ "%.2f"|format(slip.shortage_percent or 0) }}%):</span>
-                <span>₹ {{ "%.2f"|format(slip.shortage or 0) }}</span>
             </div>
             <div class="calc-row">
                 <span>Dalali (Rate: {{ "%.2f"|format(slip.dalali_rate or 0) }}):</span>

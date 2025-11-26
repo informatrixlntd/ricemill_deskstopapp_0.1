@@ -363,7 +363,9 @@
                                     <th>Date</th>
                                     <th>Party Name</th>
                                     <th>Material</th>
-                                    <th>Amount</th>
+                                    <th>Final Wt (KG)</th>
+                                    <th>Rate Basis</th>
+                                    <th>Purchase Amt</th>
                                     <th>Payable</th>
                                     <th>Paid</th>
                                     <th>Balance</th>
@@ -371,7 +373,7 @@
                                 </tr>
                             </thead>
                             <tbody id="slipsTableBody">
-                                <tr><td colspan="9" class="text-center">Loading...</td></tr>
+                                <tr><td colspan="11" class="text-center">Loading...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -807,7 +809,9 @@
                                 <td>${slip.date}</td>
                                 <td>${slip.party_name || '-'}</td>
                                 <td>${slip.material_name || '-'}</td>
-                                <td>₹${parseFloat(slip.amount || 0).toFixed(2)}</td>
+                                <td>${parseFloat(slip.final_weight_kg || 0).toFixed(2)}</td>
+                                <td>${slip.rate_basis || 'Quintal'}</td>
+                                <td>₹${parseFloat(slip.total_purchase_amount || 0).toFixed(2)}</td>
                                 <td>₹${parseFloat(slip.payable_amount || 0).toFixed(2)}</td>
                                 <td>₹${parseFloat(slip.total_paid_amount || 0).toFixed(2)}</td>
                                 <td>₹${parseFloat(slip.balance_amount || 0).toFixed(2)}</td>
@@ -821,11 +825,11 @@
                         tbody.innerHTML += row;
                     });
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="9" class="text-center">No slips found</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="11" class="text-center">No slips found</td></tr>';
                 }
             } catch (error) {
                 console.error('Error loading slips:', error);
-                document.getElementById('slipsTableBody').innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading slips</td></tr>';
+                document.getElementById('slipsTableBody').innerHTML = '<tr><td colspan="11" class="text-center text-danger">Error loading slips</td></tr>';
             }
         }
 
@@ -906,16 +910,20 @@
                                 <table class="view-table">
                                     <tr><td>Bags</td><td>${slip.bags || 0}</td></tr>
                                     <tr><td>Avg Bag Weight</td><td>${slip.avg_bag_weight || 0} kg</td></tr>
-                                    <tr><td>Net Weight</td><td>${slip.net_weight || 0} kg</td></tr>
-                                    <tr><td>Shortage</td><td>${slip.shortage_kg || 0} kg</td></tr>
-                                    <tr><td>Rate</td><td>₹${slip.rate || 0}</td></tr>
+                                    <tr><td>Net Weight (KG)</td><td>${slip.net_weight_kg || 0} kg</td></tr>
+                                    <tr><td>Gunny Weight (KG)</td><td>${slip.gunny_weight_kg || 0} kg</td></tr>
+                                    <tr><td>Final Weight (KG)</td><td><strong>${slip.final_weight_kg || 0} kg</strong></td></tr>
+                                    <tr><td>Weight (Quintal)</td><td>${slip.weight_quintal || 0}</td></tr>
+                                    <tr><td>Weight (Khandi)</td><td>${slip.weight_khandi || 0}</td></tr>
+                                    <tr><td>Rate Basis</td><td>${slip.rate_basis || 'Quintal'}</td></tr>
+                                    <tr><td>Rate Value</td><td>₹${slip.rate_value || 0}</td></tr>
                                 </table>
                             </div>
 
                             <div class="view-section">
                                 <h5>Financial Details</h5>
                                 <table class="view-table">
-                                    <tr><td>Amount</td><td><strong>₹${slip.amount || 0}</strong></td></tr>
+                                    <tr><td>Total Purchase Amount</td><td><strong>₹${slip.total_purchase_amount || 0}</strong></td></tr>
                                     <tr><td>Bank Commission</td><td>₹${slip.bank_commission || 0}</td></tr>
                                     <tr><td>Postage</td><td>₹${slip.postage || 0}</td></tr>
                                     <tr><td>Batav (${slip.batav_percent || 0}%)</td><td>₹${slip.batav || 0}</td></tr>

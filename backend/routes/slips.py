@@ -73,8 +73,17 @@ def calculate_fields(data):
 
     batav = round(total_purchase_amount * (batav_percent / 100), 2) if batav_percent > 0 else 0
     shortage = round(total_purchase_amount * (shortage_percent / 100), 2) if shortage_percent > 0 else 0
-    dalali = round(final_weight_kg * dalali_rate, 2) if dalali_rate > 0 else 0
-    hammali = round(final_weight_kg * hammali_rate, 2) if hammali_rate > 0 else 0
+
+    # NEW: Dalali & Hammali based on selected Rate Basis
+    if rate_basis == 'Quintal':
+        dalali = round(weight_quintal * dalali_rate, 2) if dalali_rate > 0 else 0
+        hammali = round(weight_quintal * hammali_rate, 2) if hammali_rate > 0 else 0
+    elif rate_basis == 'Khandi':
+        dalali = round(weight_khandi * dalali_rate, 2) if dalali_rate > 0 else 0
+        hammali = round(weight_khandi * hammali_rate, 2) if hammali_rate > 0 else 0
+    else:
+        dalali = 0
+        hammali = 0
 
     total_deduction = round(bank_commission + postage + batav + shortage + dalali + hammali + freight + rate_diff + quality_diff + moisture_ded + tds, 2)
     payable_amount = round(total_purchase_amount - total_deduction, 2)
@@ -119,7 +128,7 @@ def add_slip():
         cursor = conn.cursor()
 
         cursor.execute('''
-            INSERT INTO slips (
+            INSERT INTO purchase_slips (
                 company_name, company_address, document_type, vehicle_no, date,
                 bill_no, party_name, material_name, ticket_no, broker,
                 terms_of_delivery, sup_inv_no, gst_no,
@@ -139,7 +148,7 @@ def add_slip():
                 instalment_4_date, instalment_4_amount, instalment_4_comment,
                 instalment_5_date, instalment_5_amount, instalment_5_comment,
                 prepared_by, authorised_sign, paddy_unloading_godown
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ''', (
             data.get('company_name', ''),
             data.get('company_address', ''),

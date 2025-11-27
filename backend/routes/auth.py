@@ -88,10 +88,9 @@ def get_users():
                 COALESCE(full_name, '') as full_name,
                 role,
                 is_active,
-                created_at,
                 last_login
             FROM users
-            ORDER BY created_at DESC
+            ORDER BY id DESC
         ''')
 
         # Fetch all rows - already dictionaries due to dictionary=True
@@ -99,8 +98,6 @@ def get_users():
 
         # Format datetime fields for JSON
         for user in users:
-            if user.get('created_at'):
-                user['created_at'] = str(user['created_at'])
             if user.get('last_login'):
                 user['last_login'] = str(user['last_login'])
             user['is_active'] = bool(user.get('is_active', True))

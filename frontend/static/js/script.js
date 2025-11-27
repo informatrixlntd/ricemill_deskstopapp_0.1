@@ -82,7 +82,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function calculateFields() {
         const totalAmount = calculateTotalPurchaseAmount();
-        const finalKg = parseFloat(finalWeightKg.value) || 0;
+        const rateBasisVal = rateBasis.value;
+        const quintal = parseFloat(weightQuintal.value) || 0;
+        const khandi = parseFloat(weightKhandi.value) || 0;
 
         const bankCommissionVal = parseFloat(bankCommission.value) || 0;
         const postageVal = parseFloat(postage.value) || 0;
@@ -97,8 +99,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const hammaliRateVal = parseFloat(hammaliRate.value) || 0;
 
         const batavVal = batavPercentVal > 0 ? (totalAmount * (batavPercentVal / 100)) : 0;
-        const dalaliVal = dalaliRateVal > 0 ? (finalKg * dalaliRateVal) : 0;
-        const hammaliVal = hammaliRateVal > 0 ? (finalKg * hammaliRateVal) : 0;
+
+        // NEW: Dalali & Hammali based on selected Rate Basis
+        let dalaliVal = 0;
+        let hammaliVal = 0;
+        if (rateBasisVal === 'Quintal') {
+            dalaliVal = dalaliRateVal > 0 ? (quintal * dalaliRateVal) : 0;
+            hammaliVal = hammaliRateVal > 0 ? (quintal * hammaliRateVal) : 0;
+        } else if (rateBasisVal === 'Khandi') {
+            dalaliVal = dalaliRateVal > 0 ? (khandi * dalaliRateVal) : 0;
+            hammaliVal = hammaliRateVal > 0 ? (khandi * hammaliRateVal) : 0;
+        }
 
         const categoryADeductions = bankCommissionVal + postageVal + freightVal + rateDiffVal + qualityDiffVal + moistureDedVal + tdsVal;
         const totalDeductionVal = categoryADeductions + batavVal + dalaliVal + hammaliVal;

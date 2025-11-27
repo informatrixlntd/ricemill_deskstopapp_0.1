@@ -286,3 +286,45 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load godowns when page loads
     loadGodowns();
 });
+
+// ===== DYNAMIC INSTALMENT MANAGEMENT =====
+let visibleInstalments = [1]; // Track which instalments are shown
+
+function addInstalment() {
+    // Find next hidden instalment
+    for (let i = 2; i <= 5; i++) {
+        if (!visibleInstalments.includes(i)) {
+            const card = document.getElementById(`instalment_${i}_card`);
+            if (card) {
+                card.style.display = 'block';
+                visibleInstalments.push(i);
+            }
+            break;
+        }
+    }
+
+    // Hide add button if all 5 are visible
+    if (visibleInstalments.length >= 5) {
+        document.getElementById('addInstalmentBtn').style.display = 'none';
+    }
+}
+
+function removeInstalment(num) {
+    const card = document.getElementById(`instalment_${num}_card`);
+    if (card) {
+        card.style.display = 'none';
+
+        // Clear all fields
+        document.getElementById(`instalment_${num}_date`).value = '';
+        document.getElementById(`instalment_${num}_amount`).value = '0';
+        document.getElementById(`instalment_${num}_payment_method`).value = '';
+        document.getElementById(`instalment_${num}_payment_bank_account`).value = '';
+        document.getElementById(`instalment_${num}_comment`).value = '';
+
+        // Remove from visible list
+        visibleInstalments = visibleInstalments.filter(i => i !== num);
+
+        // Show add button again
+        document.getElementById('addInstalmentBtn').style.display = 'inline-block';
+    }
+}

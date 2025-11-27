@@ -93,45 +93,67 @@
                     </div>
 
                     <div class="section-header">Quantity Details</div>
+
+                    <!-- Row 1: Bags, Net Weight, Gunny Weight, Avg Bag Weight -->
                     <div class="row mb-3">
                         <div class="col-md-3">
                             <label class="form-label">Bags</label>
                             <input type="number" step="1" class="form-control calc-input" name="bags" id="bags" value="0">
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Net Weight (kg)</label>
-                            <input type="number" step="0.01" class="form-control calc-input" name="net_weight" id="net_weight" value="0">
+                            <label class="form-label">Net Weight (KG)</label>
+                            <input type="number" step="0.01" class="form-control calc-input" name="net_weight_kg" id="net_weight_kg" value="0">
+                            <small class="text-muted">From Dharam Kata</small>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Shortage (kg)</label>
-                            <input type="number" step="0.01" class="form-control calc-input" name="shortage_kg" id="shortage_kg" value="0">
+                            <label class="form-label">Gunny Weight (KG)</label>
+                            <input type="number" step="0.01" class="form-control calc-input" name="gunny_weight_kg" id="gunny_weight_kg" value="0">
+                            <small class="text-muted">Bora weight</small>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Avg Bag Weight (kg)</label>
+                            <label class="form-label">Avg Bag Weight (KG)</label>
                             <input type="number" step="0.01" class="form-control computed-field" name="avg_bag_weight" id="avg_bag_weight" readonly value="0">
+                            <small class="text-muted">Auto-calculated</small>
                         </div>
                     </div>
-                    <div class="row mb-4">
+
+                    <!-- Row 2: Final Weight, Weight Quintal, Weight Khandi -->
+                    <div class="row mb-3">
                         <div class="col-md-4">
-                            <label class="form-label">Rate (100 kg)</label>
-                            <input type="number" step="0.01" class="form-control calc-input" name="rate" id="rate" value="0">
+                            <label class="form-label">Final Weight (KG)</label>
+                            <input type="number" step="0.01" class="form-control computed-field" name="final_weight_kg" id="final_weight_kg" readonly value="0">
+                            <small class="text-muted">Net - Gunny</small>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Rate Basis</label>
+                            <label class="form-label">Weight (Quintal)</label>
+                            <input type="number" step="0.001" class="form-control computed-field" name="weight_quintal" id="weight_quintal" readonly value="0">
+                            <small class="text-muted">Final / 100</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Weight (Khandi)</label>
+                            <input type="number" step="0.001" class="form-control computed-field" name="weight_khandi" id="weight_khandi" readonly value="0">
+                            <small class="text-muted">Final / 150</small>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Rate Basis, Rate Value, Total Purchase Amount -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label">Rate Calculate By</label>
                             <select class="form-control calc-input" name="rate_basis" id="rate_basis">
-                                <option value="100">100 kg (Quintal)</option>
-                                <option value="150">150 kg (Khandi)</option>
+                                <option value="Quintal">Quintal</option>
+                                <option value="Khandi">Khandi</option>
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Calculated Rate</label>
-                            <input type="number" step="0.01" class="form-control computed-field" id="calculated_rate" readonly value="0">
+                            <label class="form-label">Rate Value (₹)</label>
+                            <input type="number" step="0.01" class="form-control calc-input" name="rate_value" id="rate_value" value="0">
+                            <small class="text-muted">Per selected unit</small>
                         </div>
-                    </div>
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label">Amount</label>
-                            <input type="number" step="0.01" class="form-control computed-field" id="amount" readonly>
+                        <div class="col-md-4">
+                            <label class="form-label">Total Purchase Amount (₹)</label>
+                            <input type="number" step="0.01" class="form-control computed-field" name="total_purchase_amount" id="total_purchase_amount" readonly value="0">
+                            <small class="text-muted">Weight × Rate</small>
                         </div>
                     </div>
 

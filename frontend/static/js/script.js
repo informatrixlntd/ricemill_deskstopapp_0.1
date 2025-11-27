@@ -5,13 +5,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const clearBtn = document.getElementById('clearBtn');
 
     const bags = document.getElementById('bags');
-    const netWeight = document.getElementById('net_weight');
-    const shortageKg = document.getElementById('shortage_kg');
+    const netWeightKg = document.getElementById('net_weight_kg');
+    const gunnyWeightKg = document.getElementById('gunny_weight_kg');
+    const finalWeightKg = document.getElementById('final_weight_kg');
+    const weightQuintal = document.getElementById('weight_quintal');
+    const weightKhandi = document.getElementById('weight_khandi');
     const avgBagWeight = document.getElementById('avg_bag_weight');
-    const rate = document.getElementById('rate');
     const rateBasis = document.getElementById('rate_basis');
-    const calculatedRate = document.getElementById('calculated_rate');
-    const amount = document.getElementById('amount');
+    const rateValue = document.getElementById('rate_value');
+    const totalPurchaseAmount = document.getElementById('total_purchase_amount');
     const bankCommission = document.getElementById('bank_commission');
     const postage = document.getElementById('postage');
     const freight = document.getElementById('freight');
@@ -44,25 +46,43 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    function calculateCalculatedRate() {
-        const userRate100 = parseFloat(rate.value) || 0;
-        const rateBasisVal = rateBasis.value;
+    function calculateWeightFields() {
+        const netKg = parseFloat(netWeightKg.value) || 0;
+        const gunnyKg = parseFloat(gunnyWeightKg.value) || 0;
+        const bagsVal = parseFloat(bags.value) || 0;
 
-        let calculatedRateVal;
-        if (rateBasisVal === '100') {
-            calculatedRateVal = userRate100;
-        } else if (rateBasisVal === '150') {
-            calculatedRateVal = (userRate100 / 2) * 3;
+        const finalKg = Math.max(0, netKg - gunnyKg);
+        const quintal = finalKg / 100;
+        const khandi = finalKg / 150;
+        const avgBag = bagsVal > 0 ? (finalKg / bagsVal) : 0;
+
+        finalWeightKg.value = finalKg.toFixed(2);
+        weightQuintal.value = quintal.toFixed(3);
+        weightKhandi.value = khandi.toFixed(3);
+        avgBagWeight.value = avgBag.toFixed(2);
+
+        return { finalKg, quintal, khandi };
+    }
+
+    function calculateTotalPurchaseAmount() {
+        const weights = calculateWeightFields();
+        const rateBasisVal = rateBasis.value;
+        const rateVal = parseFloat(rateValue.value) || 0;
+
+        let totalAmount = 0;
+        if (rateBasisVal === 'Quintal') {
+            totalAmount = weights.quintal * rateVal;
+        } else if (rateBasisVal === 'Khandi') {
+            totalAmount = weights.khandi * rateVal;
         }
 
-        calculatedRate.value = calculatedRateVal.toFixed(2);
-        return calculatedRateVal;
+        totalPurchaseAmount.value = totalAmount.toFixed(2);
+        return totalAmount;
     }
 
     function calculateFields() {
-        const bagsVal = parseFloat(bags.value) || 0;
-        const netWeightVal = parseFloat(netWeight.value) || 0;
-        const shortageKgVal = parseFloat(shortageKg.value) || 0;
+        const totalAmount = calculateTotalPurchaseAmount();
+        const finalKg = parseFloat(finalWeightKg.value) || 0;
 
         const bankCommissionVal = parseFloat(bankCommission.value) || 0;
         const postageVal = parseFloat(postage.value) || 0;
@@ -76,26 +96,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const dalaliRateVal = parseFloat(dalaliRate.value) || 0;
         const hammaliRateVal = parseFloat(hammaliRate.value) || 0;
 
-        const calculatedRateVal = parseFloat(calculatedRate.value) || 0;
-
-        const adjustedNetWeight = Math.max(0, netWeightVal - shortageKgVal);
-
-        const avgBagWeightVal = bagsVal > 0 ? Math.round((adjustedNetWeight / bagsVal) * 100) / 100 : 0;
-        avgBagWeight.value = avgBagWeightVal.toFixed(2);
-
-        const amountVal = Math.round(adjustedNetWeight * calculatedRateVal * 100) / 100;
-
-        const batavVal = batavPercentVal > 0 ? Math.round(amountVal * (batavPercentVal / 100) * 100) / 100 : 0;
-
-        const dalaliVal = dalaliRateVal > 0 ? Math.round(adjustedNetWeight * dalaliRateVal * 100) / 100 : 0;
-        const hammaliVal = hammaliRateVal > 0 ? Math.round(adjustedNetWeight * hammaliRateVal * 100) / 100 : 0;
+        const batavVal = batavPercentVal > 0 ? (totalAmount * (batavPercentVal / 100)) : 0;
+        const dalaliVal = dalaliRateVal > 0 ? (finalKg * dalaliRateVal) : 0;
+        const hammaliVal = hammaliRateVal > 0 ? (finalKg * hammaliRateVal) : 0;
 
         const categoryADeductions = bankCommissionVal + postageVal + freightVal + rateDiffVal + qualityDiffVal + moistureDedVal + tdsVal;
-        const totalDeductionVal = Math.round((categoryADeductions + batavVal + dalaliVal + hammaliVal) * 100) / 100;
+        const totalDeductionVal = categoryADeductions + batavVal + dalaliVal + hammaliVal;
 
-        const payableAmountVal = Math.round((amountVal - totalDeductionVal) * 100) / 100;
+        const payableAmountVal = totalAmount - totalDeductionVal;
 
-        amount.value = amountVal.toFixed(2);
         batav.value = batavVal.toFixed(2);
         dalali.value = dalaliVal.toFixed(2);
         hammali.value = hammaliVal.toFixed(2);
@@ -104,19 +113,11 @@ document.addEventListener('DOMContentLoaded', function() {
         paymentAmount.value = payableAmountVal.toFixed(2);
     }
 
-    rate.addEventListener('input', function() {
-        calculateCalculatedRate();
-        calculateFields();
-    });
-
-    rateBasis.addEventListener('change', function() {
-        calculateCalculatedRate();
-        calculateFields();
-    });
-
-    netWeight.addEventListener('input', calculateFields);
-    shortageKg.addEventListener('input', calculateFields);
+    netWeightKg.addEventListener('input', calculateFields);
+    gunnyWeightKg.addEventListener('input', calculateFields);
     bags.addEventListener('input', calculateFields);
+    rateBasis.addEventListener('change', calculateFields);
+    rateValue.addEventListener('input', calculateFields);
 
     document.querySelectorAll('.calc-input').forEach(input => {
         input.addEventListener('input', calculateFields);
@@ -132,11 +133,15 @@ document.addEventListener('DOMContentLoaded', function() {
             data[key] = value;
         });
 
-        const adjustedNetWeight = Math.max(0, parseFloat(netWeight.value) - parseFloat(shortageKg.value));
-        data['net_weight'] = adjustedNetWeight.toFixed(2);
-        data['shortage_kg'] = shortageKg.value;
-        data['calculated_rate'] = calculatedRate.value;
-        data['amount'] = amount.value;
+        data['net_weight_kg'] = netWeightKg.value;
+        data['gunny_weight_kg'] = gunnyWeightKg.value;
+        data['final_weight_kg'] = finalWeightKg.value;
+        data['weight_quintal'] = weightQuintal.value;
+        data['weight_khandi'] = weightKhandi.value;
+        data['avg_bag_weight'] = avgBagWeight.value;
+        data['rate_basis'] = rateBasis.value;
+        data['rate_value'] = rateValue.value;
+        data['total_purchase_amount'] = totalPurchaseAmount.value;
         data['batav'] = batav.value;
         data['dalali'] = dalali.value;
         data['hammali'] = hammali.value;

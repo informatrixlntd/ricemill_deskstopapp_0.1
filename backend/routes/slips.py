@@ -40,43 +40,64 @@ def calculate_payment_totals(data):
 
 
 def calculate_fields(data):
-    """Calculate all computed fields"""
+    """Calculate all computed fields with NEW weight & rate system"""
+    net_weight_kg = safe_float(data.get('net_weight_kg', 0), 0)
+    gunny_weight_kg = safe_float(data.get('gunny_weight_kg', 0), 0)
     bags = safe_float(data.get('bags', 0), 0)
-    avg_bag_weight = safe_float(data.get('avg_bag_weight', 0), 0)
-    rate = safe_float(data.get('rate', 0), 0)
+    rate_basis = data.get('rate_basis', 'Quintal')
+    rate_value = safe_float(data.get('rate_value', 0), 0)
+
     bank_commission = safe_float(data.get('bank_commission', 0), 0)
-    batav_percent = safe_float(data.get('batav_percent', 0), 0)
-    shortage_percent = safe_float(data.get('shortage_percent', 0), 0)
-    dalali_rate = safe_float(data.get('dalali_rate', 0), 0)
-    hammali_rate = safe_float(data.get('hammali_rate', 0), 0)
+    postage = safe_float(data.get('postage', 0), 0)
     freight = safe_float(data.get('freight', 0), 0)
     rate_diff = safe_float(data.get('rate_diff', 0), 0)
     quality_diff = safe_float(data.get('quality_diff', 0), 0)
     moisture_ded = safe_float(data.get('moisture_ded', 0), 0)
     tds = safe_float(data.get('tds', 0), 0)
-    postage = safe_float(data.get('postage', 0), 0)
+    batav_percent = safe_float(data.get('batav_percent', 0), 0)
+    shortage_percent = safe_float(data.get('shortage_percent', 0), 0)
+    dalali_rate = safe_float(data.get('dalali_rate', 0), 0)
+    hammali_rate = safe_float(data.get('hammali_rate', 0), 0)
 
-    net_weight = round(bags * avg_bag_weight, 2)
-    amount = round(net_weight * rate, 2)
-    batav = round(amount * (batav_percent / 100), 2) if batav_percent > 0 else 0
-    shortage = round(amount * (shortage_percent / 100), 2) if shortage_percent > 0 else 0
-    dalali = round(net_weight * dalali_rate, 2) if dalali_rate > 0 else 0
-    hammali = round(net_weight * hammali_rate, 2) if hammali_rate > 0 else 0
+    final_weight_kg = round(max(0, net_weight_kg - gunny_weight_kg), 2)
+    weight_quintal = round(final_weight_kg / 100, 3)
+    weight_khandi = round(final_weight_kg / 150, 3)
+    avg_bag_weight = round(final_weight_kg / bags, 2) if bags > 0 else 0
+
+    if rate_basis == 'Quintal':
+        total_purchase_amount = round(weight_quintal * rate_value, 2)
+    elif rate_basis == 'Khandi':
+        total_purchase_amount = round(weight_khandi * rate_value, 2)
+    else:
+        total_purchase_amount = 0
+
+    batav = round(total_purchase_amount * (batav_percent / 100), 2) if batav_percent > 0 else 0
+    shortage = round(total_purchase_amount * (shortage_percent / 100), 2) if shortage_percent > 0 else 0
+    dalali = round(final_weight_kg * dalali_rate, 2) if dalali_rate > 0 else 0
+    hammali = round(final_weight_kg * hammali_rate, 2) if hammali_rate > 0 else 0
+
     total_deduction = round(bank_commission + postage + batav + shortage + dalali + hammali + freight + rate_diff + quality_diff + moisture_ded + tds, 2)
-    payable_amount = round(amount - total_deduction, 2)
+    payable_amount = round(total_purchase_amount - total_deduction, 2)
 
     data.update({
-        'net_weight': net_weight,
-        'amount': amount,
+        'net_weight_kg': net_weight_kg,
+        'gunny_weight_kg': gunny_weight_kg,
+        'final_weight_kg': final_weight_kg,
+        'weight_quintal': weight_quintal,
+        'weight_khandi': weight_khandi,
+        'avg_bag_weight': avg_bag_weight,
+        'rate_basis': rate_basis,
+        'rate_value': rate_value,
+        'total_purchase_amount': total_purchase_amount,
         'batav': batav,
         'shortage': shortage,
         'dalali': dalali,
         'hammali': hammali,
-        'freight': safe_float(data.get('freight', 0), 0),
-        'rate_diff': safe_float(data.get('rate_diff', 0), 0),
-        'quality_diff': safe_float(data.get('quality_diff', 0), 0),
-        'moisture_ded': safe_float(data.get('moisture_ded', 0), 0),
-        'tds': safe_float(data.get('tds', 0), 0),
+        'freight': freight,
+        'rate_diff': rate_diff,
+        'quality_diff': quality_diff,
+        'moisture_ded': moisture_ded,
+        'tds': tds,
         'postage': postage,
         'total_deduction': total_deduction,
         'payable_amount': payable_amount
@@ -98,11 +119,15 @@ def add_slip():
         cursor = conn.cursor()
 
         cursor.execute('''
-            INSERT INTO purchase_slips (
+            INSERT INTO slips (
                 company_name, company_address, document_type, vehicle_no, date,
                 bill_no, party_name, material_name, ticket_no, broker,
-                terms_of_delivery, sup_inv_no, gst_no, bags, avg_bag_weight,
-                net_weight, rate, amount, bank_commission, postage, batav_percent, batav,
+                terms_of_delivery, sup_inv_no, gst_no,
+                bags, avg_bag_weight,
+                net_weight_kg, gunny_weight_kg, final_weight_kg,
+                weight_quintal, weight_khandi,
+                rate_basis, rate_value, total_purchase_amount,
+                bank_commission, postage, batav_percent, batav,
                 shortage_percent, shortage, dalali_rate, dalali, hammali_rate,
                 hammali, freight, rate_diff, quality_diff, quality_diff_comment,
                 moisture_ded, tds, total_deduction, payable_amount,
@@ -114,7 +139,7 @@ def add_slip():
                 instalment_4_date, instalment_4_amount, instalment_4_comment,
                 instalment_5_date, instalment_5_amount, instalment_5_comment,
                 prepared_by, authorised_sign, paddy_unloading_godown
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ''', (
             data.get('company_name', ''),
             data.get('company_address', ''),
@@ -131,9 +156,14 @@ def add_slip():
             data.get('gst_no', ''),
             safe_float(data.get('bags', 0), 0),
             safe_float(data.get('avg_bag_weight', 0), 0),
-            safe_float(data.get('net_weight', 0), 0),
-            safe_float(data.get('rate', 0), 0),
-            safe_float(data.get('amount', 0), 0),
+            safe_float(data.get('net_weight_kg', 0), 0),
+            safe_float(data.get('gunny_weight_kg', 0), 0),
+            safe_float(data.get('final_weight_kg', 0), 0),
+            safe_float(data.get('weight_quintal', 0), 0),
+            safe_float(data.get('weight_khandi', 0), 0),
+            data.get('rate_basis', 'Quintal'),
+            safe_float(data.get('rate_value', 0), 0),
+            safe_float(data.get('total_purchase_amount', 0), 0),
             safe_float(data.get('bank_commission', 0), 0),
             safe_float(data.get('postage', 0), 0),
             safe_float(data.get('batav_percent', 0), 0),
@@ -158,23 +188,18 @@ def add_slip():
             data.get('payment_bank_account', ''),
             data.get('payment_due_date', ''),
             data.get('payment_due_comment', ''),
-            # Instalment 1
             data.get('instalment_1_date', ''),
             safe_float(data.get('instalment_1_amount', 0), 0),
             data.get('instalment_1_comment', ''),
-            # Instalment 2
             data.get('instalment_2_date', ''),
             safe_float(data.get('instalment_2_amount', 0), 0),
             data.get('instalment_2_comment', ''),
-            # Instalment 3
             data.get('instalment_3_date', ''),
             safe_float(data.get('instalment_3_amount', 0), 0),
             data.get('instalment_3_comment', ''),
-            # Instalment 4
             data.get('instalment_4_date', ''),
             safe_float(data.get('instalment_4_amount', 0), 0),
             data.get('instalment_4_comment', ''),
-            # Instalment 5
             data.get('instalment_5_date', ''),
             safe_float(data.get('instalment_5_amount', 0), 0),
             data.get('instalment_5_comment', ''),

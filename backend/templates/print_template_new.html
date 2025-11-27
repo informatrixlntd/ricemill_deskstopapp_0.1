@@ -463,51 +463,39 @@
         </div>
         {% endif %}
 
-        {% if slip.payment_method or slip.payment_date or slip.payment_amount %}
-        <div class="section-title">Payment Information</div>
-        <div class="info-row">
-            {% if slip.payment_method %}
-            <span><strong>Method:</strong> {{ slip.payment_method }}</span>
-            {% endif %}
-            {% if slip.payment_date %}
-            <span><strong>Date:</strong> {{ slip.payment_date }}</span>
-            {% endif %}
-            {% if slip.payment_amount %}
-            <span><strong>Amount:</strong> ₹{{ "%.2f"|format(slip.payment_amount) }}</span>
-            {% endif %}
-        </div>
-        {% if slip.payment_bank_account %}
-        <div style="margin-top: 5px; font-size: 8pt; padding: 5px; background: #f9f9f9; border: 1px solid #ddd;">
-            <strong>Bank Account:</strong> {{ slip.payment_bank_account }}
-        </div>
-        {% endif %}
-        {% endif %}
-
         {% set has_instalments = slip.instalment_1_date or slip.instalment_1_amount or slip.instalment_1_comment or slip.instalment_2_date or slip.instalment_2_amount or slip.instalment_2_comment or slip.instalment_3_date or slip.instalment_3_amount or slip.instalment_3_comment or slip.instalment_4_date or slip.instalment_4_amount or slip.instalment_4_comment or slip.instalment_5_date or slip.instalment_5_amount or slip.instalment_5_comment %}
         {% if has_instalments %}
         <div class="section-title">Payment Instalments</div>
         <table class="installments-table">
             <thead>
                 <tr>
-                    <th style="width: 8%;">Sr</th>
-                    <th style="width: 28%;">Date</th>
-                    <th style="width: 28%;">Amount</th>
-                    <th style="width: 36%;">Comment</th>
+                    <th style="width: 6%;">Sr</th>
+                    <th style="width: 18%;">Date</th>
+                    <th style="width: 18%;">Amount</th>
+                    <th style="width: 16%;">Method</th>
+                    <th style="width: 20%;">Bank Account</th>
+                    <th style="width: 22%;">Comment</th>
                 </tr>
             </thead>
             <tbody>
                 {% for i in range(1, 6) %}
                     {% set date_field = 'instalment_' ~ i ~ '_date' %}
                     {% set amount_field = 'instalment_' ~ i ~ '_amount' %}
+                    {% set method_field = 'instalment_' ~ i ~ '_payment_method' %}
+                    {% set bank_field = 'instalment_' ~ i ~ '_payment_bank_account' %}
                     {% set comment_field = 'instalment_' ~ i ~ '_comment' %}
                     {% set date = slip[date_field] %}
                     {% set amount = slip[amount_field] or 0 %}
+                    {% set method = slip[method_field] %}
+                    {% set bank = slip[bank_field] %}
                     {% set comment = slip[comment_field] %}
-                    {% if date or amount > 0 or comment %}
+                    {% if date or amount > 0 or comment or method or bank %}
                 <tr>
                     <td class="text-center">{{ i }}</td>
                     <td>{{ date if date else '-' }}</td>
-                    <td class="text-right">{{ ("₹ %.2f"|format(amount)) if amount > 0 else '-' }}</td>
+                    <td class="text-right">{{ ("₹%.2f"|format(amount)) if amount > 0 else '-' }}</td>
+                    <td>{{ method if method else '-' }}</td>
+                    <td>{{ bank if bank else '-' }}</td>
                     <td>{{ comment if comment else '-' }}</td>
                 </tr>
                     {% endif %}

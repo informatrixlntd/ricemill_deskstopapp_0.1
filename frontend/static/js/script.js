@@ -168,6 +168,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify(data)
             });
 
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Server error: ${response.status} - ${errorText}`);
+            }
+
             const result = await response.json();
 
             if (result.success) {
@@ -182,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Error saving purchase slip');
+            alert('Error saving purchase slip: ' + error.message);
         }
     });
 

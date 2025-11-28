@@ -18,6 +18,12 @@ def safe_float(value, default=0.0):
     except (TypeError, ValueError):
         return default
 
+def safe_date(value):
+    """Safely convert value to date, return None if empty"""
+    if value in (None, '', ' '):
+        return None
+    return value
+
 
 def calculate_payment_totals(data):
     """
@@ -190,31 +196,31 @@ def add_slip():
             safe_float(data.get('total_deduction', 0), 0),
             safe_float(data.get('payable_amount', 0), 0),
             # Instalment 1
-            data.get('instalment_1_date', ''),
+            safe_date(data.get('instalment_1_date')),
             safe_float(data.get('instalment_1_amount', 0), 0),
             data.get('instalment_1_payment_method', ''),
             data.get('instalment_1_payment_bank_account', ''),
             data.get('instalment_1_comment', ''),
             # Instalment 2
-            data.get('instalment_2_date', ''),
+            safe_date(data.get('instalment_2_date')),
             safe_float(data.get('instalment_2_amount', 0), 0),
             data.get('instalment_2_payment_method', ''),
             data.get('instalment_2_payment_bank_account', ''),
             data.get('instalment_2_comment', ''),
             # Instalment 3
-            data.get('instalment_3_date', ''),
+            safe_date(data.get('instalment_3_date')),
             safe_float(data.get('instalment_3_amount', 0), 0),
             data.get('instalment_3_payment_method', ''),
             data.get('instalment_3_payment_bank_account', ''),
             data.get('instalment_3_comment', ''),
             # Instalment 4
-            data.get('instalment_4_date', ''),
+            safe_date(data.get('instalment_4_date')),
             safe_float(data.get('instalment_4_amount', 0), 0),
             data.get('instalment_4_payment_method', ''),
             data.get('instalment_4_payment_bank_account', ''),
             data.get('instalment_4_comment', ''),
             # Instalment 5
-            data.get('instalment_5_date', ''),
+            safe_date(data.get('instalment_5_date')),
             safe_float(data.get('instalment_5_amount', 0), 0),
             data.get('instalment_5_payment_method', ''),
             data.get('instalment_5_payment_bank_account', ''),
@@ -410,31 +416,31 @@ def update_slip(slip_id):
             safe_float(merged_data.get('total_deduction', 0), 0),
             safe_float(merged_data.get('payable_amount', 0), 0),
             # Instalment 1
-            merged_data.get('instalment_1_date', ''),
+            safe_date(merged_data.get('instalment_1_date')),
             safe_float(merged_data.get('instalment_1_amount', 0), 0),
             merged_data.get('instalment_1_payment_method', ''),
             merged_data.get('instalment_1_payment_bank_account', ''),
             merged_data.get('instalment_1_comment', ''),
             # Instalment 2
-            merged_data.get('instalment_2_date', ''),
+            safe_date(merged_data.get('instalment_2_date')),
             safe_float(merged_data.get('instalment_2_amount', 0), 0),
             merged_data.get('instalment_2_payment_method', ''),
             merged_data.get('instalment_2_payment_bank_account', ''),
             merged_data.get('instalment_2_comment', ''),
             # Instalment 3
-            merged_data.get('instalment_3_date', ''),
+            safe_date(merged_data.get('instalment_3_date')),
             safe_float(merged_data.get('instalment_3_amount', 0), 0),
             merged_data.get('instalment_3_payment_method', ''),
             merged_data.get('instalment_3_payment_bank_account', ''),
             merged_data.get('instalment_3_comment', ''),
             # Instalment 4
-            merged_data.get('instalment_4_date', ''),
+            safe_date(merged_data.get('instalment_4_date')),
             safe_float(merged_data.get('instalment_4_amount', 0), 0),
             merged_data.get('instalment_4_payment_method', ''),
             merged_data.get('instalment_4_payment_bank_account', ''),
             merged_data.get('instalment_4_comment', ''),
             # Instalment 5
-            merged_data.get('instalment_5_date', ''),
+            safe_date(merged_data.get('instalment_5_date')),
             safe_float(merged_data.get('instalment_5_amount', 0), 0),
             merged_data.get('instalment_5_payment_method', ''),
             merged_data.get('instalment_5_payment_bank_account', ''),
